@@ -1,0 +1,1 @@
+<?php if(PHP_SAPI!=='cli')exit;require __DIR__.'/../app/bootstrap.php';if(in_array('--retry-failed',$argv,true))q("UPDATE outbox SET status='pending' WHERE status='failed'");send_outbox();echo "Mail queue processed. Check outbox statuses and the server mail logs for delivery issues.\n";

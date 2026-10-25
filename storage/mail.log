@@ -1,0 +1,18 @@
+
+TO: fiverrdummy001@gmail.com
+Your seller profile is under review
+Hello Saddam Hussain,
+Your application for Saddam Traders is under review. We will email you when the administrator makes a decision.
+http://localhost:8080/seller/status.php
+
+TO: fiverrdummy001@gmail.com
+Your seller profile is approved
+Hello Saddam Hussain,
+Your application for Saddam Traders has been approved.
+http://localhost:8080/seller/status.php
+
+TO: fiverrdummy001@gmail.com
+Reset your Crave password
+Reset your password within one hour:
+http://localhost:8080/reset-password.php?token=34c001a3e2835a81822da876c2a018b939f611192be15a87d85ce2adeb953fbf
+Ignore this email if you did not request it.

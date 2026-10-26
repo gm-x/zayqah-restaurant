@@ -11,7 +11,7 @@ if(post()){
  }
 }
 require ROOT.'/app/header.php'; ?>
-<main id="main" class="page narrow"><section class="auth-card"><div class="status-icon">✉</div><h1><?=$success || ($u && $u['verified_at'])?'Email verified':'Check your inbox'?></h1><?php errors($err); ?>
+<main id="main" class="page narrow"><section class="auth-card"><div class="status-icon"><?=ui_icon('mail')?></div><h1><?=$success || ($u && $u['verified_at'])?'Email verified':'Check your inbox'?></h1><?php errors($err); ?>
 <?php if($success || ($u && $u['verified_at'])): ?><p>Your email is confirmed. You’re ready to explore.</p><a class="pill primary" href="<?=e(url($u?'accounts.php':'login.php'))?>">Continue →</a>
 <?php elseif($token && token_record($token,'verify')): ?><p>Confirm that this email address belongs to you.</p><form method="post"><?=csrf()?><input type="hidden" name="action" value="confirm"><input type="hidden" name="token" value="<?=e($token)?>"><button class="pill primary wide">Verify my email</button></form>
 <?php elseif($u): ?><p>We’ve queued a verification link for <strong><?=e($u['email'])?></strong>. It expires after 24 hours.</p><form method="post"><?=csrf()?><button class="pill primary wide">Resend verification email</button></form>

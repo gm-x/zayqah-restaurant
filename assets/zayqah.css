@@ -1,0 +1,87 @@
+/* Zayqah identity. Inter is shared across customer, seller and admin pages. */
+:root {
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --z-orange: #ff7a00;
+  --z-green: #9fd356;
+  --z-foam: #f7fff0;
+  --z-leaf: #2f3e20;
+  --orange: var(--z-orange);
+  --orange-deep: #a44500;
+  --ink: var(--z-leaf);
+  --muted: #617052;
+  --cream: var(--z-foam);
+  --line: #dee8d4;
+  --mint: #edf6e3;
+  --green: #41622a;
+  --shadow: 0 12px 40px #2f3e2010;
+}
+body, button, input, select, textarea, h1, h2, h3, .logo,
+.panel h2, .dash h2, .metric-value, .dish-price,
+#customer .market-hero h1, #customer .market-heading h2 { font-family: var(--font-ui); }
+body { background: var(--z-foam); -webkit-font-smoothing: antialiased; }
+h1,h2,h3 { font-weight: 700; letter-spacing: -.035em; }
+a { color: #a44500; }
+p,.hint,.subtitle,.expires-note { color: var(--muted); }
+.ui-icon { display: inline-block; vertical-align: -.15em; flex-shrink: 0; }
+.logo { color: var(--z-leaf); font-weight: 750; letter-spacing: -.055em; }
+.logo .accent { color: #a44500; }
+.logo-mark { background: var(--z-orange); color: var(--z-leaf); transform: none; border-radius: 12px; }
+.logo-mark .ui-icon { width: 25px; height: 25px; }
+.pill.primary, .hero-search button, #customer .hero-cta,
+#customer .seller-banner a, #customer .seller-banner button {
+  background: var(--z-orange); border-color: var(--z-orange); color: #25321a;
+}
+.pill.primary:hover, #customer .hero-cta:hover { background: #ee7000; border-color: #ee7000; }
+.nav a:hover,.nav a.active { color: #a44500; }
+.header-v3 .seller-menu-link, .header-v3 .mobile-seller-cta {
+  background: #edf6e3; border-color: #d2e5b8; color: var(--z-leaf);
+}
+.header-cart-count { background: var(--z-green); color: var(--z-leaf); }
+.menu-toggle { background: var(--z-foam); color: var(--z-leaf); }
+#customer .market-hero { background: linear-gradient(110deg, #f7fff0 0%, #e2f2cb 58%, #9fd356 100%); }
+#customer .market-hero h1, #customer .market-hero h1 em { color: var(--z-leaf); }
+#customer .market-hero h1 { line-height: 1.08; }
+#customer .market-hero p { color: #526542; }
+#customer .hero-cta { gap: 12px; box-shadow: 0 8px 19px #ff7a0026; }
+#customer .hero-perks>span { display: inline-flex; align-items: center; gap: 5px; color: #526542; }
+#customer .eyebrow, #customer .heading-kicker, .heading-kicker, .eyebrow { color: #41622a; }
+#customer .sidebar-help, .side-help { background: #edf6e3; color: var(--z-leaf); }
+#customer .seller-banner, .account-welcome, .about-hero { background: #e5f3d2; }
+.auth-story { background: linear-gradient(150deg, #f7fff0, #d9edbf); }
+.auth-story h1 em,.about-hero em { color: #41622a; }
+.auth-story p,.auth-story small { color: #526542; }
+.lavender,.metric-icon { background: #edf6e3!important; color: #41622a; }
+.bar.dark { background: var(--z-orange); }
+.track>div { background: var(--z-green); }
+.chip { background: #e5f3d2; color: #41622a; }
+.chip.pending { background: #fff0e3; color: #994100; }
+.review-stars>span { color: #a44500; }
+.rating-picker input:checked+span { color: var(--z-leaf); background: var(--z-green); border-color: #7caf3a; }
+.favourite-button { color: #41622a; }
+.favourite-button.is-saved { background: #fff0e3; color: #a44500; border-color: #ffcf9e; }
+.side-item { gap: 10px; }
+.side-item.active { background: #edf6e3; color: var(--z-leaf); }
+.story-art .ui-icon { width: 130px; height: 130px; color: #41622a; stroke-width: 1.1; }
+.seller-illustration .ui-icon { width: 100px; height: 100px; color: #41622a; stroke-width: 1.2; }
+.status-icon .ui-icon { width: 34px; height: 34px; }
+.account-welcome-art .ui-icon { width: 100px; height: 100px; color: #7eac48; }
+.cart-empty>.ui-icon { width: 48px; height: 48px; color: #7eac48; }
+.seller-card-pattern .ui-icon { width: 110px; height: 110px; }
+.side-search>.ui-icon { min-width: 16px; color: #617052; }
+.heading-kicker .ui-icon { width: 14px; height: 14px; margin-right: 4px; }
+.feed-actions .ui-icon { width: 15px; height: 15px; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,
+summary:focus-visible,.header-v3 summary:focus-visible { outline-color: #a44500; }
+@media(max-width:700px) {
+  .seller-illustration .ui-icon { width: 64px; height: 64px; }
+  #customer .market-hero-copy { width: 100%; }
+}
+@media(prefers-reduced-motion:reduce) {
+  html { scroll-behavior: auto; }
+  *,*::before,*::after { animation: none!important; transition: none!important; }
+}
+
+.weekday-picker input:checked+span { color: var(--z-leaf); }
+
+.category-tile-icon .ui-icon { color: #41622a; }
+#customer .filter-option>.ui-icon { color: #617052; }

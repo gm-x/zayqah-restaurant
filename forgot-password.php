@@ -4,7 +4,7 @@ if(post()){
  if(!limit('forgot',5,3600))$err[]='Too many requests. Please try again in an hour.';
  elseif(!email_valid(val('email')))$err[]='Enter a valid email address.';
  else{$u=one('SELECT * FROM users WHERE email=?',[strtolower(val('email'))]);
-  if($u){db()->beginTransaction();$t=token_issue((int)$u['id'],'reset');queue_mail($u['email'],'Reset your Crave password',"Reset your password within one hour:\n".url('reset-password.php?token='.$t)."\nIgnore this email if you did not request it.");db()->commit();mail_after_commit();}$done=true;
+  if($u){db()->beginTransaction();$t=token_issue((int)$u['id'],'reset');queue_mail($u['email'],'Reset your Zayqah password',"Reset your password within one hour:\n".url('reset-password.php?token='.$t)."\nIgnore this email if you did not request it.");db()->commit();mail_after_commit();}$done=true;
  }
 }
 require ROOT.'/app/header.php'; ?>

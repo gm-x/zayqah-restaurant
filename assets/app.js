@@ -1,12 +1,14 @@
 'use strict';
 const mobileToggle=document.querySelector('.menu-toggle');
 const mobileNav=document.getElementById('mobile-nav');
+const mobileMenuIcon=mobileToggle?.querySelector('svg')?.outerHTML || '<svg class="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
+const mobileCloseIcon='<svg class="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>';
 const mobileBreakpoint=window.matchMedia('(max-width: 1020px)');
 function setMobileMenu(open,restoreFocus=false){
  if(!mobileNav || !mobileToggle)return;
  mobileNav.hidden=!open;mobileToggle.setAttribute('aria-expanded',String(open));
  mobileToggle.setAttribute('aria-label',open?'Close navigation':'Open navigation');
- mobileToggle.textContent=open?'×':'☰';
+ mobileToggle.innerHTML=open?mobileCloseIcon:mobileMenuIcon;
  if(!open)mobileNav.querySelectorAll('details[open]').forEach(el=>el.open=false);
  if(restoreFocus)mobileToggle.focus();
 }
@@ -41,7 +43,7 @@ document.querySelectorAll('.header-dropdown>summary').forEach(summary=>{
 });
 document.addEventListener('click',event=>{
  document.querySelectorAll('.header-dropdown[open]').forEach(el=>{if(!el.contains(event.target))el.open=false;});
- if(!event.target.closest('.header-v3') && mobileNav && !mobileNav.hidden)setMobileMenu(false);
+ if(!event.composedPath().includes(document.querySelector('.header-v3')) && mobileNav && !mobileNav.hidden)setMobileMenu(false);
 });
 document.addEventListener('keydown',event=>{
  if(event.key!=='Escape')return;

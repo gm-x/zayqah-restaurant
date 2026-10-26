@@ -1,0 +1,36 @@
+/* Zayqah carousel: editable banner copy with a blended image background. */
+#customer .market-hero [data-carousel-heading]{white-space:pre-line;overflow-wrap:anywhere}
+#customer .market-hero [data-carousel-description]{overflow-wrap:anywhere}
+#customer .market-hero.zq-hero-carousel{isolation:isolate;position:relative;display:block;height:auto;min-height:330px;padding:0;overflow:hidden;background:linear-gradient(105deg,#f7fff0,#deedcb)}
+#customer .zq-hero-carousel .market-hero-copy{position:relative;z-index:2;width:62%;padding:30px 0 52px 32px}
+#customer .zq-hero-carousel .zq-carousel{position:absolute;z-index:0;right:-2%;top:0;width:46%;height:100%;overflow:hidden;clip-path:ellipse(82% 85% at 82% 50%);background:#9fd356}
+#customer .zq-hero-carousel:after{content:"";position:absolute;z-index:1;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 42%,#e5f3d233 65%,transparent 85%)}
+#customer .zq-slide{position:absolute;inset:0;margin:0}
+#customer .zq-slide[hidden]{display:none!important}
+#customer .zq-carousel .zq-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;clip-path:none;opacity:1;right:0;top:0}
+#customer .zq-carousel-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:min(360px,calc(100% - 32px));z-index:4;display:flex;justify-content:center;flex-wrap:nowrap}
+#customer .zq-carousel-dots button{width:16px;min-width:8px;flex:0 1 16px;height:20px;border:0;padding:0;background:transparent;cursor:pointer;display:grid;place-items:center}
+#customer .zq-carousel-dots button:before{content:"";width:5px;height:5px;border-radius:50%;background:#617052}
+#customer .zq-carousel-dots button[aria-current=true]:before{background:#2f3e20;width:8px;height:8px}
+#customer .zq-hero-carousel button:focus-visible,#customer .zq-hero-carousel:focus-visible{outline:3px solid #9fd356;outline-offset:-3px}
+.zq-admin-preview{display:block;width:100%;height:180px;object-fit:cover;border-radius:12px;background:#edf6e3}
+.zq-admin-slide{padding:18px 0;border-bottom:1px solid var(--line)}
+.zq-admin-slide h3{font-size:17px;overflow-wrap:anywhere;margin-bottom:6px}
+.zq-checkbox{display:flex;align-items:center;gap:10px;margin-top:18px;font-weight:600}
+.zq-checkbox input{width:18px;height:18px;accent-color:#41622a}
+.zq-delete{font-size:12px;color:#a44500}
+.zq-delete summary{cursor:pointer;padding:10px}
+.zq-delete p{font-size:12px}
+
+@media(max-width:700px){
+ #customer .market-hero.zq-hero-carousel{min-height:365px}
+ #customer .zq-hero-carousel .market-hero-copy{width:100%;padding:25px 25px 60px}
+ #customer .zq-hero-carousel .zq-carousel{right:-24%;width:85%;height:100%;opacity:.36;clip-path:ellipse(85% 75% at 90% 50%)}
+ #customer .zq-hero-carousel:after{background:linear-gradient(90deg,#f7fff04d,#e6f6d466)}
+ #customer .zq-hero-carousel .market-hero-copy h1{font-size:clamp(30px,8vw,38px);line-height:1.12}
+ #customer .zq-hero-carousel .market-hero-copy p{max-width:100%}
+ .zq-carousel-editor{grid-template-columns:minmax(0,1fr)}
+}
+
+#customer .zq-hero-carousel{touch-action:pan-y pinch-zoom}
+#customer .zq-carousel img{user-select:none;-webkit-user-drag:none}

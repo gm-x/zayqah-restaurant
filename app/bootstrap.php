@@ -111,7 +111,7 @@ function send_outbox(): void {
  }
 }
 function verification_mail(array $u): void {
- $t=token_issue((int)$u['id'],'verify');queue_mail($u['email'],'Verify your Crave email',"Hello {$u['full_name']},\nConfirm your email within 24 hours:\n".url('verify-email.php?token='.$t)."\nIf this was not you, ignore this email.");
+ $t=token_issue((int)$u['id'],'verify');queue_mail($u['email'],'Verify your Zayqah email',"Hello {$u['full_name']},\nConfirm your email within 24 hours:\n".url('verify-email.php?token='.$t)."\nIf this was not you, ignore this email.");
 }
 function mail_after_commit(): void {try {send_outbox();}catch(Throwable $ex){error_log('Mail delivery failed: '.$ex->getMessage());}}
 function encrypt_cnic(string $cnic): string {
@@ -149,4 +149,5 @@ set_exception_handler(function(Throwable $e){
  if(PHP_SAPI==='cli'){fwrite(STDERR,$e->getMessage()."\n");exit(1);}fail(500,'The request could not be completed. Check server configuration or try again.');
 });
 
+require_once ROOT.'/app/icons.php';
 require_once ROOT.'/app/features.php';

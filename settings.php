@@ -20,7 +20,7 @@ if(post()){
    if(one('SELECT id FROM users WHERE email=?',[$email])){$err[]='This email address is already registered.';db()->rollBack();}
    else{q('DELETE FROM email_changes WHERE expires_at<=?',[now()]);q('DELETE FROM email_changes WHERE user_id=?',[$u['id']]);$token=bin2hex(random_bytes(32));
     q('INSERT INTO email_changes (user_id,new_email,old_email,session_version,token_hash,expires_at,created_at) VALUES (?,?,?,?,?,?,?)',[$u['id'],$email,$u['email'],$u['session_version'],hash('sha256',$token),gmdate('Y-m-d H:i:s',time()+3600),now()]);
-    queue_mail($email,'Confirm your new Crave email',"Hello {$u['full_name']},\nConfirm your new email address within one hour:\n".url('confirm-email.php?token='.$token)."\nYour current email will remain active until you confirm this change.");db()->commit();mail_after_commit();flash('Verification queued for your new email. Your current email stays active until you confirm it.');go('settings.php#email');}
+    queue_mail($email,'Confirm your new Zayqah email',"Hello {$u['full_name']},\nConfirm your new email address within one hour:\n".url('confirm-email.php?token='.$token)."\nYour current email will remain active until you confirm this change.");db()->commit();mail_after_commit();flash('Verification queued for your new email. Your current email stays active until you confirm it.');go('settings.php#email');}
   }catch(PDOException $ex){if(db()->inTransaction())db()->rollBack();if(in_array((string)$ex->getCode(),['23000','23505']))$err[]='This email address is already registered or awaiting confirmation.';else throw $ex;}}
  }elseif($action==='cancel-email'){
   if(update02_ready())q('DELETE FROM email_changes WHERE user_id=?',[$u['id']]);flash('Pending email change cancelled.');go('settings.php#email');

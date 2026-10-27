@@ -26,20 +26,20 @@ function window_for(array $item,?DateTimeImmutable $at=null): ?array {
 function live_until(array $item): string {$window=window_for($item);return $window?$window['end']->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'):$item['expires_at'];}
 function dish_is_live(int $id): bool {return (bool)one('SELECT id FROM menu_items m WHERE m.id=? AND '.live_sql('m'),[$id]);}
 function menu_state(array $m): string {
- if($m['status']==='archived')return 'Archived';if($m['status']==='paused')return 'Paused';if($m['status']==='draft')return 'Draft';if(dish_is_live((int)$m['id']))return isset($m['category_active'])&&!$m['category_active']?'Category hidden':'Live';$w=window_for($m);return $w&&$w['start']>new DateTimeImmutable('now')?'Scheduled':'Expired';
+ if($m['status']==='archived')return t('Archived');if($m['status']==='paused')return t('Paused');if($m['status']==='draft')return t('Draft');if(dish_is_live((int)$m['id']))return isset($m['category_active'])&&!$m['category_active']?t('Category hidden'):'Live';$w=window_for($m);return $w&&$w['start']>new DateTimeImmutable('now')?t('Scheduled'):t('Expired');
 }
 function utc_picker(string $value): ?string {$d=DateTimeImmutable::createFromFormat('!Y-m-d\TH:i',$value,new DateTimeZone(cfg('timezone')));return $d&&$d->format('Y-m-d\TH:i')===$value?$d->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'):null;}
 function parse_schedule(): array {
- $mode=val('schedule_mode')?:'now';if(!in_array($mode,['now','once','weekly','draft']))throw new InvalidArgumentException('Choose an availability option.');
+ $mode=val('schedule_mode')?:'now';if(!in_array($mode,['now','once','weekly','draft']))throw new InvalidArgumentException(t('Choose an availability option.'));
  $s=['mode'=>$mode,'start_at'=>null,'end_at'=>null,'weekday_mask'=>0,'start_date'=>null,'end_date'=>null,'start_time'=>null,'end_time'=>null];
- if(in_array($mode,['now','once'])){$s['start_at']=$mode==='now'?now():utc_picker(val('starts_at'));$s['end_at']=utc_picker(val('expires_at'));if(!$s['start_at']||!$s['end_at']||$s['end_at']<=$s['start_at']||$s['end_at']<=now())throw new InvalidArgumentException('Choose a valid start and end time; the end must be in the future.');}
+ if(in_array($mode,['now','once'])){$s['start_at']=$mode==='now'?now():utc_picker(val('starts_at'));$s['end_at']=utc_picker(val('expires_at'));if(!$s['start_at']||!$s['end_at']||$s['end_at']<=$s['start_at']||$s['end_at']<=now())throw new InvalidArgumentException(t('Choose a valid start and end time; the end must be in the future.'));}
  if($mode==='weekly'){
   $days=is_array($_POST['weekdays']??null)?$_POST['weekdays']:[];foreach($days as $day)if(is_string($day)&&in_array($day,['1','2','3','4','5','6','7'],true))$s['weekday_mask']|=1<<((int)$day-1);
-  if(!$s['weekday_mask'])throw new InvalidArgumentException('Choose at least one weekday.');
-  foreach(['start_date','end_date'] as $key){$v=val($key);if($key==='end_date'&&$v==='')continue;$d=DateTimeImmutable::createFromFormat('!Y-m-d',$v,new DateTimeZone(cfg('timezone')));if(!$d||$d->format('Y-m-d')!==$v)throw new InvalidArgumentException('Choose a valid schedule date.');$s[$key]=$v;}
-  if($s['end_date']&&$s['end_date']<$s['start_date'])throw new InvalidArgumentException('The final date must be on or after the first date.');
-  foreach(['start_time','end_time'] as $key){$v=val($key);if(!preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/',$v))throw new InvalidArgumentException('Choose valid weekly start and end times.');$s[$key]=$v;}
-  if($s['start_time']===$s['end_time'])throw new InvalidArgumentException('Use different start and end times. An earlier end time means the next day.');
+  if(!$s['weekday_mask'])throw new InvalidArgumentException(t('Choose at least one weekday.'));
+  foreach(['start_date','end_date'] as $key){$v=val($key);if($key==='end_date'&&$v==='')continue;$d=DateTimeImmutable::createFromFormat('!Y-m-d',$v,new DateTimeZone(cfg('timezone')));if(!$d||$d->format('Y-m-d')!==$v)throw new InvalidArgumentException(t('Choose a valid schedule date.'));$s[$key]=$v;}
+  if($s['end_date']&&$s['end_date']<$s['start_date'])throw new InvalidArgumentException(t('The final date must be on or after the first date.'));
+  foreach(['start_time','end_time'] as $key){$v=val($key);if(!preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/',$v))throw new InvalidArgumentException(t('Choose valid weekly start and end times.'));$s[$key]=$v;}
+  if($s['start_time']===$s['end_time'])throw new InvalidArgumentException(t('Use different start and end times. An earlier end time means the next day.'));
  }return $s;
 }
 function save_schedule(int $id,array $s): void {

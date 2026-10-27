@@ -10,8 +10,8 @@ if (PHP_SAPI !== 'cli') {
  session_name('crave_session');
  session_set_cookie_params(['httponly'=>true, 'secure'=>str_starts_with(cfg('url'),'https://'), 'samesite'=>'Lax','path'=>parse_url(cfg('url'),PHP_URL_PATH) ?: '/']);
  session_start();
- header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: same-origin');
- header("Content-Security-Policy: default-src 'self'; img-src 'self' https://images.unsplash.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+ header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: strict-origin-when-cross-origin');
+ header("Content-Security-Policy: default-src 'self'; img-src 'self' https://images.unsplash.com https://tile.openstreetmap.org data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
  header('Cache-Control: no-store');
 }
 function db(): PDO {
@@ -31,7 +31,7 @@ function go(string $p): never {header('Location: '.url($p));exit;}
 function csrf(): string {$_SESSION['csrf'] ??= bin2hex(random_bytes(32));return '<input type="hidden" name="csrf" value="'.e($_SESSION['csrf']).'">';}
 function post(): bool {
  if ($_SERVER['REQUEST_METHOD']!=='POST') return false;
- if (empty($_SESSION['csrf']) || !is_string($_POST['csrf']??null) || !hash_equals($_SESSION['csrf']??'',$_POST['csrf'])) {http_response_code(419);exit('Your session expired. Reload the page and try again.');}
+ if (empty($_SESSION['csrf']) || !is_string($_POST['csrf']??null) || !hash_equals($_SESSION['csrf']??'',$_POST['csrf'])) {http_response_code(419);exit(t('Your session expired. Reload the page and try again.'));}
  return true;
 }
 function val(string $k): string {return is_string($_POST[$k]??null) ? trim($_POST[$k]) : '';}
@@ -49,7 +49,7 @@ function require_user(bool $verified=true): array {
  if ($verified && !$u['verified_at']) go('verify-email.php');
  return $u;
 }
-function require_admin(): array { $u=require_user(); if($u['role']!=='admin') fail(403,'This page is for the platform administrator.');return $u; }
+function require_admin(): array { $u=require_user(); if($u['role']!=='admin') fail(403,t('This page is for the platform administrator.'));return $u; }
 function application(int $id): ?array {return one('SELECT * FROM seller_applications WHERE user_id=?',[$id]);}
 function require_seller(): array {
  $u=require_user();$a=application((int)$u['id']);
@@ -57,23 +57,25 @@ function require_seller(): array {
  return $u;
 }
 function fail(int $status,string $message): never {
- http_response_code($status);$title='Something needs attention';require ROOT.'/app/header.php';
- echo '<main class="page narrow"><div class="panel"><h1>'.e($status).'</h1><p>'.e($message).'</p><a class="pill primary" href="'.e(url()).'">Back to home</a></div></main>';
+ http_response_code($status);$title=t('Something needs attention');require ROOT.'/app/header.php';
+ echo '<main class="page narrow"><div class="panel"><h1>'.e($status).'</h1><p>'.e(t($message)).'</p><a class="pill primary" href="'.e(url()).'">Back to home</a></div></main>';
  require ROOT.'/app/footer.php';exit;
 }
 function password_errors(string $a,string $b): array {
- $err=[];if (strlen($a)<8 || strlen($a)>72) $err[]='Use a password between 8 and 72 characters.';
- if ($a!==$b) $err[]='The passwords do not match.';return $err;
+ $err=[];if (strlen($a)<8 || strlen($a)>72) $err[]=t('Use a password between 8 and 72 characters.');
+ if ($a!==$b) $err[]=t('The passwords do not match.');return $err;
 }
 function email_valid(string $s): bool {return strlen($s)<=254 && filter_var($s,FILTER_VALIDATE_EMAIL)!==false;}
 function text_valid(string $s,int $min,int $max): bool {return mb_strlen($s)>=$min && mb_strlen($s)<=$max;}
-function errors(array $errors): void {if($errors) echo '<div role="alert" class="alert error"><ul><li>'.implode('</li><li>',array_map('e',$errors)).'</li></ul></div>';}
+function errors(array $errors): void {if($errors) echo '<div role="alert" class="alert error"><ul><li>'.implode('</li><li>',array_map(fn($message)=>e(t($message)),$errors)).'</li></ul></div>';}
 function field(string $name,string $label,string $type='text',string $extra='',?string $value=null): void {
  if ($value===null) $value=$type==='password'?'':val($name);
- echo '<div class="field"><label for="'.e($name).'">'.e($label).'</label><input id="'.e($name).'" name="'.e($name).'" type="'.e($type).'" value="'.e($value).'" '.$extra.'></div>';
+ $extra=preg_replace_callback('/placeholder="([^"]*)"/',fn($m)=>'placeholder="'.e(t(html_entity_decode($m[1],ENT_QUOTES|ENT_HTML5,'UTF-8'))).'"',$extra);
+ echo '<div class="field"><label for="'.e($name).'">'.e(t($label)).'</label><input id="'.e($name).'" name="'.e($name).'" type="'.e($type).'" value="'.e($value).'" '.$extra.'></div>';
 }
 function area(string $name,string $label,string $value='',string $extra=''):void {
- echo '<div class="field"><label for="'.e($name).'">'.e($label).'</label><textarea id="'.e($name).'" name="'.e($name).'" '.$extra.'>'.e($value).'</textarea></div>';
+ $extra=preg_replace_callback('/placeholder="([^"]*)"/',fn($m)=>'placeholder="'.e(t(html_entity_decode($m[1],ENT_QUOTES|ENT_HTML5,'UTF-8'))).'"',$extra);
+ echo '<div class="field"><label for="'.e($name).'">'.e(t($label)).'</label><textarea id="'.e($name).'" name="'.e($name).'" '.$extra.'>'.e($value).'</textarea></div>';
 }
 function limit(string $scope,int $max=10,int $seconds=900): bool {
  // Database-backed attempts survive new browser sessions. Do not trust forwarded client IP headers.
@@ -111,13 +113,13 @@ function send_outbox(): void {
  }
 }
 function verification_mail(array $u): void {
- $t=token_issue((int)$u['id'],'verify');queue_mail($u['email'],'Verify your Zayqah email',"Hello {$u['full_name']},\nConfirm your email within 24 hours:\n".url('verify-email.php?token='.$t)."\nIf this was not you, ignore this email.");
+ $t=token_issue((int)$u['id'],'verify');queue_mail($u['email'],t('Verify your Zayqah email'),"Hello {$u['full_name']},\nConfirm your email within 24 hours:\n".url('verify-email.php?token='.$t)."\nIf this was not you, ignore this email.");
 }
 function mail_after_commit(): void {try {send_outbox();}catch(Throwable $ex){error_log('Mail delivery failed: '.$ex->getMessage());}}
 function encrypt_cnic(string $cnic): string {
  $key=base64_decode(cfg('key'),true);if($key===false || strlen($key)!==32)throw new RuntimeException('Run php bin/setup.php to generate APP_KEY.');
  $iv=random_bytes(12);$tag='';$cipher=openssl_encrypt($cnic,'aes-256-gcm',$key,OPENSSL_RAW_DATA,$iv,$tag);
- if($cipher===false)throw new RuntimeException('Encryption failed.');return base64_encode($iv.$tag.$cipher);
+ if($cipher===false)throw new RuntimeException(t('Encryption failed.'));return base64_encode($iv.$tag.$cipher);
 }
 function decrypt_cnic(string $encrypted): string {
  $v=base64_decode($encrypted,true);$key=base64_decode(cfg('key'),true);
@@ -126,28 +128,34 @@ function decrypt_cnic(string $encrypted): string {
 }
 function upload(string $field,string $kind,int $owner,bool $required=true): ?string {
  $f=$_FILES[$field]??null;
- if(!$f || ($f['error']??UPLOAD_ERR_NO_FILE)===UPLOAD_ERR_NO_FILE){if($required)throw new InvalidArgumentException('Please upload '.str_replace('_',' ',$field).'.');return null;}
- if($f['error']!==UPLOAD_ERR_OK || $f['size']>5*1024*1024)throw new InvalidArgumentException('Images must upload successfully and be under 5 MB.');
+ if(!$f || ($f['error']??UPLOAD_ERR_NO_FILE)===UPLOAD_ERR_NO_FILE){if($required)throw new InvalidArgumentException(t('Please upload ').str_replace('_',' ',$field).'.');return null;}
+ if($f['error']!==UPLOAD_ERR_OK || $f['size']>5*1024*1024)throw new InvalidArgumentException(t('Images must upload successfully and be under 5 MB.'));
  $mime=(new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);$ext=['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'][$mime]??null;
  $size=@getimagesize($f['tmp_name']);
- if(!$ext || !$size || $size[0]>8000 || $size[1]>8000)throw new InvalidArgumentException('Choose a JPG, PNG or WebP image up to 8000 × 8000 pixels.');
+ if(!$ext || !$size || $size[0]>8000 || $size[1]>8000)throw new InvalidArgumentException(t('Choose a JPG, PNG or WebP image up to 8000 × 8000 pixels.'));
  $id=bin2hex(random_bytes(24));$path=$id.'.'.$ext;
- if(!move_uploaded_file($f['tmp_name'],ROOT.'/storage/uploads/'.$path))throw new RuntimeException('Upload could not be saved.');
+ if(!move_uploaded_file($f['tmp_name'],ROOT.'/storage/uploads/'.$path))throw new RuntimeException(t('Upload could not be saved.'));
  chmod(ROOT.'/storage/uploads/'.$path,0600);
  q('INSERT INTO files (id,owner_id,kind,path,mime,created_at) VALUES (?,?,?,?,?,?)',[$id,$owner,$kind,$path,$mime,now()]);return $id;
 }
 function image_url(?string $id): string {return $id?url('media.php?id='.$id):url('assets/placeholder.svg');}
-function local_time(?string $time,string $format='d M Y, g:i a'): string {return $time?(new DateTimeImmutable($time,new DateTimeZone('UTC')))->setTimezone(new DateTimeZone(cfg('timezone')))->format($format):'—';}
+function local_time(?string $time,string $format='d M Y, g:i a'): string {
+ if(!$time)return '—';$formatted=(new DateTimeImmutable($time,new DateTimeZone('UTC')))->setTimezone(new DateTimeZone(cfg('timezone')))->format($format);
+ return site_language()==='ur'?preg_replace_callback('/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|am|pm)\b/i',fn($m)=>t($m[1]),$formatted):$formatted;
+}
 function utc_expiry(string $v): ?string {
  $tz=new DateTimeZone(cfg('timezone'));$d=DateTimeImmutable::createFromFormat('!Y-m-d\TH:i',$v,$tz);
  if(!$d || $d->format('Y-m-d\TH:i')!==$v || $d->getTimestamp()<=time())return null;
  return $d->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
 }
-function audit(int $admin,string $action,int $target): void {q('INSERT INTO audit_logs (admin_id,action,target_id,created_at) VALUES (?,?,?,?)',[$admin,$action,$target,now()]);}
+function audit(int $admin,string $action,int $target): void {q('INSERT INTO audit_logs (admin_id,action,target_id,created_at) VALUES (?,?,?,?)',[$admin,source_text($action),$target,now()]);}
 set_exception_handler(function(Throwable $e){
  try {if(db()->inTransaction())db()->rollBack();}catch(Throwable $ignored){} error_log((string)$e);
- if(PHP_SAPI==='cli'){fwrite(STDERR,$e->getMessage()."\n");exit(1);}fail(500,'The request could not be completed. Check server configuration or try again.');
+ if(PHP_SAPI==='cli'){fwrite(STDERR,$e->getMessage()."\n");exit(1);}fail(500,t('The request could not be completed. Check server configuration or try again.'));
 });
 
+require_once ROOT.'/app/i18n.php';
 require_once ROOT.'/app/icons.php';
 require_once ROOT.'/app/features.php';
+
+require_once ROOT.'/app/experience.php';

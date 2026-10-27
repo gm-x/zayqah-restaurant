@@ -28,7 +28,7 @@ function review_stats(int $seller): array {
  $r=one('SELECT AVG(rating) average,COUNT(*) count FROM seller_reviews WHERE seller_id=?',[$seller]);return ['average'=>(float)($r['average']??0),'count'=>(int)($r['count']??0)];
 }
 function rating_html(float $average,int $count): string {
- $score=$count?number_format($average,1).' / 5 · '.$count.' '.($count===1?'review':'reviews'):'No reviews yet';
+ $score=$count?number_format($average,1).' / 5 · '.$count.' '.($count===1?t('review'):t('reviews')):t('No reviews yet');
  return '<div class="rating-line"><span class="review-stars" aria-hidden="true">★★★★★<span style="width:'.($count?round($average/5*100):0).'%">★★★★★</span></span><span>'.e($score).'</span></div>';
 }
 function change_record(string $token): ?array {

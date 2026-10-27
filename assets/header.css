@@ -16,7 +16,7 @@
 .header-v3 .seller-menu-link small{display:block;width:100%;font-size:11px;font-weight:500;color:#617052;margin-top:4px}
 .header-v3 .workspace-menu-link{font-weight:700}
 .header-v3 .account-dropdown-panel{top:calc(100% + 10px)}
-@media(max-width:1020px){
+@media(max-width:1180px){
  .header-v3 .desktop-account{display:none}
  .header-v3 .nav{display:none}
  .header-v3 .menu-toggle{display:grid;place-items:center;width:44px;min-width:44px;height:44px;min-height:44px;font-size:23px;touch-action:manipulation}

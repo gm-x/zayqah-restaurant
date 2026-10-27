@@ -2,6 +2,8 @@
 /** Small, self-contained outline icons for the web. No icon font or Apple assets. */
 function ui_icon(string $name, int $size=20): string {
     static $paths = [
+         'bell'=>'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+         'location'=>'<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
          'burger'=>'<path d="M4 9a8 6 0 0 1 16 0ZM3 13h18M4 17h16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/>',
         'pizza'=>'<path d="M3 20 9 3a21 21 0 0 1 12 12L3 20Zm4-12a17 17 0 0 1 9 9"/><circle cx="9" cy="14" r="1"/><circle cx="13" cy="11" r="1"/>',
         'leaf'=>'<path d="M20 3C9 2 2 8 5 15s15 8 15-12ZM4 21 15 10"/>',

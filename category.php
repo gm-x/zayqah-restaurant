@@ -1,0 +1,18 @@
+<?php
+require __DIR__.'/app/bootstrap.php';$category=(int)param('category');$c=one('SELECT * FROM categories WHERE id=? AND active=1',[$category]);if(!$c)fail(404,t('Category not found.'));
+$title=category_label($c['name']).' · '.t('Food');$search=mb_substr(param('q'),0,120);$min=param('min_price');$max=param('max_price');$err=[];
+foreach([$min,$max] as $price)if($price!==''&&!preg_match('/^\d{1,6}(\.\d{1,2})?$/',$price))$err[]=t('Enter a valid price between Rs 0 and Rs 999,999.99.');
+if(!$err&&$min!==''&&$max!==''&&(float)$min>(float)$max)$err[]=t('Minimum price cannot exceed maximum price.');
+$sql="SELECT m.*,s.business_name,c.name category_name FROM menu_items m JOIN seller_applications s ON s.user_id=m.seller_id JOIN categories c ON c.id=m.category_id WHERE m.category_id=? AND c.active=1 AND s.status='approved' AND ".live_sql('m');$args=[$category];
+if($search!==''){$sql.=' AND (LOWER(m.name) LIKE ? OR LOWER(m.description) LIKE ? OR LOWER(s.business_name) LIKE ?)';for($i=0;$i<3;$i++)$args[]='%'.mb_strtolower($search).'%';}
+if($err)$sql.=' AND 1=0';else{if($min!==''){$sql.=' AND m.price_paisa>=?';$args[]=(int)round((float)$min*100);}if($max!==''){$sql.=' AND m.price_paisa<=?';$args[]=(int)round((float)$max*100);}}
+$candidates=all($sql.' ORDER BY m.id',$args);$feed=shuffled_feed($candidates,hash('sha256','category:'.json_encode([$category,$search,$min,$max])));$total=count($feed);$page=max(1,min(10000,(int)param('page')?:1));$items=array_slice($feed,($page-1)*20,20);$hasMore=$page*20<$total;
+$params=['category'=>$category,'q'=>$search,'min_price'=>$min,'max_price'=>$max];$cardsReturn='category.php?'.http_build_query($params);$next=$hasMore?url('category.php?'.http_build_query([...$params,'page'=>$page+1])):null;
+if(param('format')==='json'){
+ header('Content-Type: application/json; charset=utf-8');ob_start();require ROOT.'/app/cards.php';$html=ob_get_clean();echo json_encode(['html'=>$html,'next'=>$next,'count'=>count($items),'total'=>$total,'error'=>$err?implode(' ',$err):null]);exit;
+}
+require ROOT.'/app/header.php'; ?>
+<main class="page shell" id="main"><div class="page-heading"><span class="heading-kicker"><?=e(t('FIND YOUR NEXT FAVORITE'))?></span><h1><?=e(category_label($c['name']))?></h1><p><?=number_format($total)?> <?=e(t('live dishes · Search this category by dish or kitchen.'))?></p></div>
+<form method="get" class="panel category-search"><input type="hidden" name="category" value="<?=$category?>"><label for="category-q"><?=e(t('Search {category}',['category'=>category_label($c['name'])]))?></label><div class="search-line"><input id="category-q" name="q" type="search" maxlength="120" value="<?=e($search)?>" placeholder="<?=e(t('Search dishes or kitchens'))?>"><button class="pill primary"><?=e(t('Search'))?></button></div><div class="category-price-inputs"><?php field('min_price',t('Minimum price (Rs)'),'number','min="0" max="999999.99" step="0.01"',$min);field('max_price',t('Maximum price (Rs)'),'number','min="0" max="999999.99" step="0.01"',$max); ?></div></form>
+<div class="category-shortcuts"><a class="pill compact" href="<?=e(url('categories.php'))?>"><?=e(t('All categories'))?></a><a class="pill compact" href="<?=e(url('category.php?category='.$category))?>"><?=e(t('Clear search'))?></a></div><?php errors($err); ?>
+<div data-category-results><?php require ROOT.'/app/cards.php'; ?></div><div class="load-more-area"><p class="hint" data-load-count><?=count($items)?> <?=e(t('of'))?> <?=$total?> <?=e(t('dishes shown'))?></p><?php if($next): ?><a class="pill primary" href="<?=e($next)?>" data-load-more><?=e(t('Load more dishes'))?></a><?php endif ?><p class="hint" role="status" data-load-status></p></div></main><?php require ROOT.'/app/footer.php'; ?>

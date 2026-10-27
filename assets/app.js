@@ -3,11 +3,11 @@ const mobileToggle=document.querySelector('.menu-toggle');
 const mobileNav=document.getElementById('mobile-nav');
 const mobileMenuIcon=mobileToggle?.querySelector('svg')?.outerHTML || '<svg class="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
 const mobileCloseIcon='<svg class="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg>';
-const mobileBreakpoint=window.matchMedia('(max-width: 1020px)');
+const mobileBreakpoint=window.matchMedia('(max-width: 1180px)');
 function setMobileMenu(open,restoreFocus=false){
  if(!mobileNav || !mobileToggle)return;
  mobileNav.hidden=!open;mobileToggle.setAttribute('aria-expanded',String(open));
- mobileToggle.setAttribute('aria-label',open?'Close navigation':'Open navigation');
+ mobileToggle.setAttribute('aria-label',open?zqT('Close navigation'):zqT('Open navigation'));
  mobileToggle.innerHTML=open?mobileCloseIcon:mobileMenuIcon;
  if(!open)mobileNav.querySelectorAll('details[open]').forEach(el=>el.open=false);
  if(restoreFocus)mobileToggle.focus();
@@ -56,7 +56,7 @@ mobileBreakpoint.addEventListener('change',()=>{closeHeaderDropdowns();setMobile
 window.addEventListener('resize',positionCart,{passive:true});
 window.addEventListener('scroll',positionCart,{passive:true});
 document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', e => {
- if (!confirm(form.dataset.confirm)) e.preventDefault();
+ if (!confirm(zqT(form.dataset.confirm))) e.preventDefault();
 }));
 function hideExpired() {
  document.querySelectorAll('[data-expires]').forEach(card => {
@@ -80,10 +80,10 @@ document.addEventListener('submit', async event => {
   const result=await response.json();
   if(result.html){const panel=document.getElementById('cart-content');if(panel)panel.innerHTML=result.html;document.querySelectorAll('.cart-full-page').forEach(el=>el.innerHTML=result.html);}
   if(Number.isInteger(result.count))document.querySelectorAll('[data-cart-count]').forEach(el=>el.textContent=result.count);
-  cartFeedback(result.message || 'Cart updated.');
+  cartFeedback(result.message || zqT('Cart updated.'));
   if(!result.error && data.get('action')==='add')openCart();
   else positionCart();
- } catch(error) {cartFeedback('Could not update your cart. Reload the page and try again.');}
+ } catch(error) {cartFeedback(zqT('Could not update your cart. Reload the page and try again.'));}
  finally {if(submit)submit.disabled=false;}
 });
 

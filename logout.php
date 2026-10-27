@@ -1,1 +1,1 @@
-<?php require __DIR__.'/app/bootstrap.php';if(post()){$_SESSION=[];session_regenerate_id(true);session_destroy();go('login.php');}http_response_code(405);header('Allow: POST');exit('Use the Sign out button.');
+<?php require __DIR__.'/app/bootstrap.php';if(post()){$_SESSION=[];session_regenerate_id(true);session_destroy();go('login.php');}http_response_code(405);header('Allow: POST');exit(t('Use the Sign out button.'));

@@ -16,3 +16,22 @@ Reset your Crave password
 Reset your password within one hour:
 http://localhost:8080/reset-password.php?token=34c001a3e2835a81822da876c2a018b939f611192be15a87d85ce2adeb953fbf
 Ignore this email if you did not request it.
+
+TO: admin@ahsancomplex.com
+Verify your Zayqah email
+Hello Ali Uzair,
+Confirm your email within 24 hours:
+http://localhost:8080/verify-email.php?token=2449f51fce527b1a519d3d574f907ace9bb54e060c044b5d07fb5dac54f730c7
+If this was not you, ignore this email.
+
+TO: admin@ahsancomplex.com
+Your seller profile is under review
+Hello Ali Uzair,
+Your application for Zayqah is under review. We will email you when the administrator makes a decision.
+http://localhost:8080/seller/status.php
+
+TO: admin@ahsancomplex.com
+Your seller profile is approved
+Hello Ali Uzair,
+Your application for Zayqah has been approved.
+http://localhost:8080/seller/status.php

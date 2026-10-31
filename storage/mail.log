@@ -35,3 +35,9 @@ Your seller profile is approved
 Hello Ali Uzair,
 Your application for Zayqah has been approved.
 http://localhost:8080/seller/status.php
+
+TO: admin@ahsancomplex.com
+Reset your Zayqah password
+Reset your password within one hour:
+http://localhost:8080/reset-password.php?token=1a1a12de5d9be21be7b9c2d3da8297972645b95a57d6a8c2667edac2cd6286d4
+Ignore this email if you did not request it.

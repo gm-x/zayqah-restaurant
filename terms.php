@@ -1,2 +1,23 @@
-<?php require __DIR__.'/app/bootstrap.php';$title=t('Terms of use — draft');require ROOT.'/app/header.php'; ?>
-<main class="page shell medium prose" id="main"><section class="panel padded"><span class="heading-kicker"><?=e(t('ZAYQAH COMMUNITY'))?></span><h1><?=e(t('Terms of use — draft'))?></h1><div class="alert"><?=e(t('Draft for owner review before public launch. Add business identity, support contact and applicable food and commercial terms.'))?></div><h2><?=e(t('Customer accounts'))?></h2><p><?=e(t('Use accurate account details, keep your password private, and verify your email before applying to sell.'))?></p><h2><?=e(t('Seller applications'))?></h2><p><?=e(t('Submitting an application does not grant seller access. The administrator must approve your business and identity details first. Rejected applications may be corrected and resubmitted.'))?></p><h2><?=e(t('Menu accuracy'))?></h2><p><?=e(t('Sellers are responsible for accurate descriptions, prices, ingredients, allergen information and expiry times. Do not upload content or identity documents you are not authorized to provide.'))?></p><h2><?=e(t('Community reviews'))?></h2><p><?=e(t('Share honest feedback about restaurants. Do not impersonate others, publish private information or rate your own business. Community ratings are not verified-purchase reviews.'))?></p><h2><?=e(t('Current release'))?></h2><p><?=e(t('This release supports account creation, seller review, scheduled menus, orders for pickup or seller delivery, favourites and reviews. Delivery charges are shown separately at checkout. Payment is made directly to the shop; online payment and refund processing are not integrated.'))?></p></section></main><?php require ROOT.'/app/footer.php'; ?>
+<?php
+require __DIR__ . '/app/bootstrap.php';
+
+$title = 'Terms of service';
+require ROOT . '/app/views/header.php';
+?>
+<main id="main" class="section">
+    <div class="container narrow prose">
+        <h1>Terms of service</h1>
+        <p class="hint">Template text — have this reviewed before you launch.</p>
+        <h2>Ordering</h2>
+        <p>An order is accepted once we confirm it. Prices are shown on the menu and at checkout, including any delivery fee. You can cancel an order online until we confirm it; after that, please call us.</p>
+        <h2>Payment</h2>
+        <p>Payment is taken on collection or delivery by cash or card.</p>
+        <h2>Allergens</h2>
+        <p>Ingredients and allergens are listed on each dish. Our kitchen handles common allergens, so we cannot guarantee any dish is completely free from traces. Please tell us about allergies in your order notes.</p>
+        <h2>Delivery</h2>
+        <p>Delivery times are estimates. Please make sure your address and map pin are accurate and that someone is available to receive the order.</p>
+        <h2>Contact</h2>
+        <p><?= e(setting('name')) ?>, <?= e(setting('address')) ?> · <?= e(setting('phone')) ?> · <?= e(setting('email')) ?></p>
+    </div>
+</main>
+<?php require ROOT . '/app/views/footer.php'; ?>

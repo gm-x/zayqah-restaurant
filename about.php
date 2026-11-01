@@ -1,2 +1,29 @@
-<?php require __DIR__.'/app/bootstrap.php';$title=t('About us');require ROOT.'/app/header.php'; ?>
-<main class="page shell medium" id="main"><section class="about-hero"><span class="heading-kicker"><?=e(t('A LITTLE ABOUT ZAYQAH'))?></span><h1><?=e(t('Good food brings'))?><br><em><?=e(t('neighbors together.'))?></em></h1><p><?=e(t('We’re creating a place where local kitchens can share what they love to cook, and food lovers can discover something worth craving.'))?></p></section><div class="two-columns"><section class="panel padded"><h2><?=e(t('For food lovers.'))?></h2><p><?=e(t('Explore dishes, compare prices, discover local restaurants, and get to know the ingredients behind every plate. Browse at your own pace.'))?></p><a class="pill primary" href="<?=e(url('index.php'))?>"><?=e(t('Explore Food →'))?></a></section><section class="panel padded"><h2><?=e(t('For local kitchens.'))?></h2><p><?=e(t('Share your menu with your community. Create a seller profile, complete a business review, and publish dishes on your own schedule.'))?></p><a class="pill" href="<?=e(url('seller/apply.php'))?>"><?=e(t('Meet your next customers →'))?></a></section></div></main><?php require ROOT.'/app/footer.php'; ?>
+<?php
+require __DIR__ . '/app/bootstrap.php';
+
+$title = 'About us';
+$paragraphs = array_filter(array_map('trim', preg_split('/\n\s*\n/', setting('about'))));
+$dishCount = (int)scalar("SELECT COUNT(*) FROM menu_items WHERE status <> 'hidden'");
+
+require ROOT . '/app/views/header.php';
+?>
+<main id="main">
+    <section class="page-hero">
+        <div class="container"><span class="eyebrow">Our story</span><h1>About <?= e(setting('name')) ?></h1><p class="lead"><?= e(setting('tagline')) ?>.</p></div>
+    </section>
+    <section class="section section-tight">
+        <div class="container split">
+            <div class="prose">
+                <?php foreach ($paragraphs as $p): ?><p><?= nl2br(e($p)) ?></p><?php endforeach ?>
+                <a class="btn btn-primary" href="<?= e(url('menu.php')) ?>">Explore the menu</a>
+            </div>
+            <div class="info-cards">
+                <div class="info-card"><strong class="stat"><?= $dishCount ?></strong><p>dishes on our menu</p></div>
+                <div class="info-card"><strong class="stat">~<?= (int)setting('prep_minutes') ?> min</strong><p>average preparation time</p></div>
+                <div class="info-card"><?= icon('pin', 22) ?><strong>Find us</strong><p><?= e(setting('address')) ?></p></div>
+                <div class="info-card"><?= icon('phone', 22) ?><strong>Call us</strong><p><?= e(setting('phone')) ?></p></div>
+            </div>
+        </div>
+    </section>
+</main>
+<?php require ROOT . '/app/views/footer.php'; ?>

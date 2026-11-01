@@ -1,1 +1,0 @@
-<?php require __DIR__.'/../app/bootstrap.php';$u=require_seller();$item=one('SELECT * FROM menu_items WHERE id=? AND seller_id=?',[(int)param('id'),$u['id']]);if(!$item)fail(404,t('Menu item not found.'));require ROOT.'/app/menu-form.php';

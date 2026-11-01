@@ -1,25 +1,110 @@
 <?php
-require __DIR__.'/app/bootstrap.php';$title=t('Discover your next favorite meal');
-$categories=all('SELECT * FROM categories WHERE active=1 ORDER BY name');
-$search=mb_substr(param('q'),0,120);$cat=(int)param('category');$minPrice=param('min_price');$maxPrice=param('max_price');$filterErrors=[];
-foreach(['Minimum'=>$minPrice,t('Maximum')=>$maxPrice] as $label=>$value){if($value!=='' && !preg_match('/^\d{1,6}(\.\d{1,2})?$/',$value))$filterErrors[]=t('{label} price must be between Rs 0 and Rs 999,999.99.',['label'=>t($label)]);}
-if(!$filterErrors && $minPrice!=='' && $maxPrice!=='' && (float)$minPrice>(float)$maxPrice)$filterErrors[]=t('Minimum price must not exceed maximum price.');
-$sql="SELECT m.*,s.business_name,c.name category_name FROM menu_items m JOIN seller_applications s ON s.user_id=m.seller_id JOIN categories c ON c.id=m.category_id WHERE ".live_sql('m')." AND s.status='approved' AND c.active=1";
-$args=[];if($cat){$sql.=' AND m.category_id=?';$args[]=$cat;}
-if($search!==''){$sql.=' AND (LOWER(m.name) LIKE ? OR LOWER(m.description) LIKE ? OR LOWER(s.business_name) LIKE ?)';for($i=0;$i<3;$i++)$args[]='%'.mb_strtolower($search).'%';}
-if($filterErrors)$sql.=' AND 1=0';else{if($minPrice!==''){$sql.=' AND m.price_paisa>=?';$args[]=(int)round((float)$minPrice*100);}if($maxPrice!==''){$sql.=' AND m.price_paisa<=?';$args[]=(int)round((float)$maxPrice*100);}}
-$candidates=all($sql.' ORDER BY m.id',$args);$filterKey=hash('sha256',json_encode([$search,$cat,$minPrice,$maxPrice]));$feed=shuffled_feed($candidates,$filterKey,param('refresh')==='1');
-$page=max(1,(int)param('page'));$total=count($feed);$pages=max(1,(int)ceil($total/24));$page=min($page,$pages);$items=array_slice($feed,($page-1)*24,24);
-require_once ROOT.'/app/carousel.php';
-$bannerSlides=carousel_ready()?all('SELECT * FROM homepage_slides WHERE active=1 ORDER BY sort_order,id'):[];
-require ROOT.'/app/header.php'; ?>
-<link rel="stylesheet" href="<?=e(url('assets/carousel.css?v=3'))?>"><script defer src="<?=e(url('assets/carousel-slider.js?v=urdu1'))?>"></script>
-<div id="customer"><div class="market-layout shell"><aside class="market-sidebar"><form method="get" action="<?=e(url('index.php'))?>"><div class="side-search"><?=ui_icon('search',16)?><input aria-label="<?=e(t('Search dishes or kitchens'))?>" name="q" type="search" value="<?=e($search)?>" placeholder="<?=e(t('Search dishes, restaurants...'))?>"><button aria-label="<?=e(t('Search'))?>"><?=ui_icon('arrow',18)?></button></div><div class="filter-heading"><?=e(t('Categories'))?> <a href="<?=e(url())?>"><?=e(t('Clear all'))?></a></div><div class="browse-categories" data-auto-category><label class="filter-option"><input type="radio" name="category" value="0" <?=$cat===0?'checked':''?>> <?=e(t('All food'))?></label><?php foreach($categories as $c): ?><label class="filter-option"><input type="radio" name="category" value="<?=$c['id']?>" <?=$cat===$c['id']?'checked':''?>> <?=category_ui_icon($c['name'],16)?> <?=e(category_label($c['name']))?></label><?php endforeach ?></div><fieldset class="price-range-box"><legend><?=e(t('Price range (Rs)'))?></legend><div class="price-inputs"><div><label for="min_price"><?=e(t('Minimum'))?></label><input id="min_price" name="min_price" type="number" min="0" max="999999.99" step="0.01" placeholder="0" value="<?=e($minPrice)?>"></div><span aria-hidden="true">–</span><div><label for="max_price"><?=e(t('Maximum'))?></label><input id="max_price" name="max_price" type="number" min="0" max="999999.99" step="0.01" placeholder="<?=e(t('Any'))?>" value="<?=e($maxPrice)?>"></div></div></fieldset><button class="pill primary wide filter-apply"><?=e(t('Apply filters'))?></button></form><div class="sidebar-help"><strong><?=e(t('Made fresh, shared locally.'))?></strong><p><?=e(t('Discover something delicious from your neighborhood kitchens.'))?></p></div></aside>
-<main class="market-main" id="main"><section class="market-hero <?=$bannerSlides?'zq-hero-carousel':''?>" <?php if($bannerSlides): ?>role="region" aria-roledescription="carousel" aria-label="<?=e(t('Featured food'))?>" data-carousel tabindex="0"<?php endif ?>><div class="market-hero-copy"><span class="eyebrow"><?=e(t('YOUR NEXT FAVORITE MEAL'))?></span><h1 data-carousel-heading dir="auto"><?=e($bannerSlides[0]['caption']??t("Delicious food.\nJust around the corner."))?></h1><p data-carousel-description dir="auto"><?=e($bannerSlides[0]['alt_text']??t('From neighborhood favorites to fresh new flavors — find something worth craving.'))?></p><a class="hero-cta" href="#dishes"><?=e(t('Explore dishes'))?> <span>→</span></a><div class="hero-perks"><span><?=ui_icon('store',14)?> <?=e(t('Local kitchens'))?></span><span><?=ui_icon('heart',14)?> <?=e(t('Made with love'))?></span></div></div><?php if($bannerSlides): ?><div class="zq-carousel">
-<?php foreach($bannerSlides as $i=>$slide): ?><figure class="zq-slide" data-heading="<?=e($slide['caption'])?>" data-description="<?=e($slide['alt_text'])?>" role="group" aria-roledescription="slide" aria-label="<?=e(t('Slide {current} of {total}',['current'=>$i+1,'total'=>count($bannerSlides)]))?>" <?=$i?'hidden':''?>>
-<img src="<?=e(url('carousel-image.php?id='.$slide['id']))?>" alt="<?=e($slide['caption'])?>" width="720" height="600" decoding="async" <?=$i?'loading="lazy"':'fetchpriority="high"'?>>
-</figure><?php endforeach ?>
-</div><?php if(count($bannerSlides)>1): ?><div class="zq-carousel-dots" aria-label="<?=e(t('Choose a slide'))?>"><?php foreach($bannerSlides as $i=>$slide): ?><button type="button" data-carousel-dot="<?=$i?>" aria-label="Show slide <?=($i+1)?>" aria-current="<?=$i?'false':'true'?>"></button><?php endforeach ?></div><?php endif ?>
-<?php else: ?><img alt="<?=e(t('Vibrant freshly prepared meal'))?>" src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1100&q=85"><?php endif ?></section><div class="market-heading" id="dishes"><div><span class="heading-kicker"><?=ui_icon('bowl',14)?> <?=e(t('CURATED FOR YOU'))?></span><h2><?=$search?t('Your search results'):t('Fresh from local kitchens')?></h2><p><?=number_format($total)?> <?=e(t('available dishes · All times'))?> <?=e(cfg('timezone'))?></p></div><div class="feed-actions"><a href="?<?=e(http_build_query(['q'=>$search,'category'=>$cat,'min_price'=>$minPrice,'max_price'=>$maxPrice,'refresh'=>1]))?>"><?=e(t('Refresh selection'))?> <?=ui_icon('refresh',15)?></a><a href="<?=e(url('restaurants.php'))?>"><?=e(t('View kitchens →'))?></a></div></div><?php errors($filterErrors);require ROOT.'/app/cards.php'; ?>
-<?php if($pages>1): ?><nav class="pagination" aria-label="<?=e(t('Results pages'))?>"><?php if($page>1): ?><a class="pill" href="?<?=e(http_build_query(['q'=>$search,'category'=>$cat,'min_price'=>$minPrice,'max_price'=>$maxPrice,'page'=>$page-1]))?>"><?=e(t('← Previous'))?></a><?php endif ?><span><?=e(t('Page'))?> <?=$page?> <?=e(t('of'))?> <?=$pages?></span><?php if($page<$pages): ?><a class="pill" href="?<?=e(http_build_query(['q'=>$search,'category'=>$cat,'min_price'=>$minPrice,'max_price'=>$maxPrice,'page'=>$page+1]))?>"><?=e(t('Next →'))?></a><?php endif ?></nav><?php endif ?>
-<div class="seller-banner"><div><small><?=e(t('COOK SOMETHING GREAT'))?></small><h2><?=e(t('Share your food with the neighborhood.'))?></h2><p><?=e(t('Apply to become a seller, publish your menu, and grow your business.'))?></p><a class="pill primary" href="<?=e(url('seller/apply.php'))?>"><?=e(t('Start selling →'))?></a></div><div class="seller-illustration" aria-hidden="true"><?=ui_icon('store')?></div></div></main></div></div><?php require ROOT.'/app/footer.php'; ?>
+require __DIR__ . '/app/bootstrap.php';
+
+$title = setting('tagline');
+$bodyClass = 'home';
+$slides = all('SELECT * FROM slides WHERE active = 1 ORDER BY sort_order, id');
+$featured = visible_items('m.featured = 1', [], 'm.sort_order, m.name');
+if (!$featured) $featured = visible_items('1 = 1', [], 'm.updated_at DESC');
+$featured = array_slice($featured, 0, 6);
+$categories = menu_categories();
+$status = opening_status();
+$heroHeading = $slides[0]['heading'] ?? setting('tagline');
+$heroText = $slides[0]['subheading'] ?? 'Freshly prepared in our kitchen every day. Order online for collection or delivery.';
+
+require ROOT . '/app/views/header.php';
+?>
+<main id="main">
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-copy">
+                <span class="open-pill <?= $status['open'] ? 'is-open' : '' ?>"><?= icon('clock', 15) ?> <?= e($status['label']) ?></span>
+                <h1 data-hero-heading><?= e($heroHeading) ?></h1>
+                <p class="lead" data-hero-text><?= e($heroText) ?></p>
+                <div class="hero-actions">
+                    <a class="btn btn-primary btn-lg" href="<?= e(url('menu.php')) ?>">View menu &amp; order <?= icon('arrow', 18) ?></a>
+                    <a class="btn btn-ghost btn-lg" href="<?= e(url('contact.php')) ?>">Find us</a>
+                </div>
+                <ul class="hero-facts">
+                    <?php if (setting('pickup_enabled') === '1'): ?><li><?= icon('bag', 18) ?> Collection</li><?php endif ?>
+                    <?php if (setting('delivery_enabled') === '1'): ?><li><?= icon('truck', 18) ?> Delivery <?= (int)setting('delivery_fee') ? money((int)setting('delivery_fee')) : 'free' ?></li><?php endif ?>
+                    <li><?= icon('clock', 18) ?> Ready in ~<?= (int)setting('prep_minutes') ?> min</li>
+                </ul>
+            </div>
+            <div class="hero-visual" <?php if (count($slides) > 1): ?>data-carousel aria-roledescription="carousel" aria-label="Featured"<?php endif ?>>
+                <?php if ($slides): ?>
+                    <?php foreach ($slides as $i => $slide): ?>
+                        <figure class="hero-slide <?= $i ? '' : 'is-active' ?>" data-heading="<?= e($slide['heading']) ?>" data-text="<?= e($slide['subheading']) ?>" aria-roledescription="slide" aria-label="<?= $i + 1 ?> of <?= count($slides) ?>">
+                            <img src="<?= e(image_url($slide['photo_id'])) ?>" alt="<?= e($slide['heading']) ?>" <?= $i ? 'loading="lazy"' : 'fetchpriority="high"' ?>>
+                        </figure>
+                    <?php endforeach ?>
+                    <?php if (count($slides) > 1): ?>
+                        <div class="carousel-dots">
+                            <?php foreach ($slides as $i => $slide): ?>
+                                <button type="button" data-slide="<?= $i ?>" aria-label="Show slide <?= $i + 1 ?>" <?= $i ? '' : 'aria-current="true"' ?>></button>
+                            <?php endforeach ?>
+                        </div>
+                    <?php endif ?>
+                <?php else: ?>
+                    <figure class="hero-slide is-active"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80" alt="Inside our restaurant" fetchpriority="high"></figure>
+                <?php endif ?>
+            </div>
+        </div>
+    </section>
+
+    <?php if ($categories): ?>
+        <section class="section section-tight">
+            <div class="container">
+                <div class="category-strip">
+                    <?php foreach ($categories as $c): ?>
+                        <a class="category-pill" href="<?= e(url('menu.php#cat-' . $c['id'])) ?>"><?= e($c['name']) ?></a>
+                    <?php endforeach ?>
+                </div>
+            </div>
+        </section>
+    <?php endif ?>
+
+    <?php if ($featured): ?>
+        <section class="section">
+            <div class="container">
+                <div class="section-head">
+                    <div><span class="eyebrow">From our kitchen</span><h2>Chef's recommendations</h2></div>
+                    <a class="link-arrow" href="<?= e(url('menu.php')) ?>">Full menu <?= icon('arrow', 16) ?></a>
+                </div>
+                <div class="dish-grid">
+                    <?php foreach ($featured as $item) require ROOT . '/app/views/dish-card.php'; ?>
+                </div>
+            </div>
+        </section>
+    <?php endif ?>
+
+    <section class="section section-alt">
+        <div class="container split">
+            <div>
+                <span class="eyebrow">Our story</span>
+                <h2>Cooked fresh, served with care</h2>
+                <?php foreach (array_slice(preg_split('/\n\s*\n/', setting('about')), 0, 2) as $paragraph): ?>
+                    <p><?= e($paragraph) ?></p>
+                <?php endforeach ?>
+                <a class="btn btn-ghost" href="<?= e(url('about.php')) ?>">More about us</a>
+            </div>
+            <div class="info-cards">
+                <div class="info-card"><?= icon('utensils', 22) ?><strong>Made to order</strong><p>Every dish is cooked when you order it, never reheated.</p></div>
+                <div class="info-card"><?= icon('leaf', 22) ?><strong>Fresh ingredients</strong><p>Produce delivered daily and allergens listed on every dish.</p></div>
+                <div class="info-card"><?= icon('truck', 22) ?><strong>Collect or deliver</strong><p>Pick up from the restaurant or have it brought to your door.</p></div>
+                <div class="info-card"><?= icon('clock', 22) ?><strong>Live tracking</strong><p>Follow your order from our kitchen until it reaches you.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container cta-band">
+            <div>
+                <h2>Hungry? We're ready when you are.</h2>
+                <p><?= e(setting('address')) ?> · <?= e(setting('phone')) ?></p>
+            </div>
+            <a class="btn btn-light btn-lg" href="<?= e(url('menu.php')) ?>">Start your order <?= icon('arrow', 18) ?></a>
+        </div>
+    </section>
+</main>
+<?php require ROOT . '/app/views/footer.php'; ?>

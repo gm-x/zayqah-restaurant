@@ -1,14 +1,51 @@
 <?php
-require __DIR__.'/app/bootstrap.php';$u=require_user(false);require_commerce();require_experience();$title=t('Track your order');$reference=strtoupper(param('reference'));$order=null;$err=[];
-if($reference!==''){
- if(!limit('tracking:'.$u['id'],120,900))$err[]=t('Too many tracking requests. Please try again later.');
- elseif(!preg_match('/^[A-Z0-9-]{3,32}$/',$reference))$err[]=t('Enter the full order ID from your order confirmation.');
- else{$order=one('SELECT * FROM orders WHERE reference=? AND (customer_id=? OR seller_id=?)',[$reference,$u['id'],$u['id']]);if(!$order)$err[]=t('No matching order was found in your account. Check the full order ID.');}
+require __DIR__ . '/app/bootstrap.php';
+
+$u = require_user(false);
+$reference = strtoupper(param('reference'));
+$order = null;
+$errors = [];
+
+if ($reference !== '') {
+    if (!limit('tracking:' . $u['id'], 240, 900)) {
+        $errors[] = 'Too many tracking requests. Please wait a few minutes.';
+    } elseif (!preg_match('/^[A-Z0-9-]{3,20}$/', $reference)) {
+        $errors[] = 'Enter the full order number from your confirmation.';
+    } else {
+        $order = is_owner($u)
+            ? one('SELECT * FROM orders WHERE reference = ?', [$reference])
+            : one('SELECT * FROM orders WHERE reference = ? AND customer_id = ?', [$reference, $u['id']]);
+        if (!$order) $errors[] = 'We could not find that order in your account.';
+    }
 }
-if(param('format')==='json'){
- header('Content-Type: application/json; charset=utf-8');if(!$order){http_response_code(404);echo json_encode(['error'=>$err[0]??t('Order not found.')]);}else echo json_encode(['html'=>tracking_html($order),'status'=>$order['status'],'updated_at'=>$order['updated_at'],'order_id'=>(int)$order['id'],'location'=>one('SELECT * FROM order_locations WHERE order_id=?',[$order['id']])]);exit;
+
+if (param('format') === 'json') {
+    if (!$order) json_out(['error' => $errors[0] ?? 'Order not found.'], 404);
+    json_out([
+        'status' => $order['status'],
+        'html'   => tracking_html($order),
+        'rider'  => $order['rider_latitude'] !== null ? [(float)$order['rider_latitude'], (float)$order['rider_longitude']] : null,
+    ]);
 }
-require ROOT.'/app/header.php'; ?>
-<main class="page shell medium" id="main"><div class="page-heading"><span class="heading-kicker"><?=e(t('FROM THE KITCHEN TO YOU'))?></span><h1><?=e(t('Track your order'))?></h1><p><?=e(t('Paste the order ID from your confirmation. You can track orders linked to your account.'))?></p></div>
-<form method="get" class="tracking-search panel"><label for="reference"><?=e(t('Order ID'))?></label><div class="search-line"><input id="reference" name="reference" required maxlength="32" placeholder="CR-XXXXXXXXXX" value="<?=e($reference)?>"><button class="pill primary"><?=e(t('Track order'))?></button></div></form><?php errors($err); ?>
-<?php if($order): ?><div data-track-panel data-track-url="<?=e(url('track-order.php?format=json&reference='.rawurlencode($reference)))?>"><?=tracking_html($order)?></div><?php order_map($order); ?><a class="pill space-top" href="<?=e(url(((int)$order['seller_id']===(int)$u['id']?'seller/':'').'order.php?id='.$order['id']))?>"><?=e(t('View order details →'))?></a><?php elseif($reference===''): ?><section class="panel padded"><h2><?=e(t('Need your order ID?'))?></h2><p><?=e(t('You’ll find it in order history and on your confirmation page.'))?></p><a class="pill" href="<?=e(url($u['role']==='seller'?'seller/orders.php':'orders.php'))?>"><?=e(t('Open order history'))?></a></section><?php endif ?></main><?php require ROOT.'/app/footer.php'; ?>
+
+$title = 'Track your order';
+require ROOT . '/app/views/header.php';
+?>
+<main id="main" class="section">
+    <div class="container narrow">
+        <h1>Track your order</h1>
+        <p class="lead">Enter the order number from your confirmation email, or open it from <a href="<?= e(url('orders.php')) ?>">My orders</a>.</p>
+        <form class="card inline-form" method="get">
+            <label class="sr-only" for="reference">Order number</label>
+            <input id="reference" name="reference" required maxlength="20" placeholder="OR-XXXXXXXX" value="<?= e($reference) ?>">
+            <button class="btn btn-primary" type="submit">Track</button>
+        </form>
+        <?php errors($errors); ?>
+        <?php if ($order): ?>
+            <div class="card" data-track data-track-url="<?= e(url('track-order.php?format=json&reference=' . rawurlencode($order['reference']))) ?>" data-status="<?= e($order['status']) ?>"><?= tracking_html($order) ?></div>
+            <?php if ($order['fulfillment'] === 'delivery'): ?><div class="card"><?php order_map($order); ?></div><?php endif ?>
+            <a class="btn btn-ghost" href="<?= e(url((is_owner($u) ? 'owner/' : '') . 'order.php?id=' . $order['id'])) ?>">View order details</a>
+        <?php endif ?>
+    </div>
+</main>
+<?php require ROOT . '/app/views/footer.php'; ?>

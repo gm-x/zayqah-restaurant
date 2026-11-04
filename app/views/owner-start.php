@@ -30,9 +30,9 @@ unset($_SESSION['flash']);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(url('assets/vendor/leaflet/leaflet.css')) ?>">
-    <link rel="stylesheet" href="<?= e(url('assets/css/app.css?v=2')) ?>">
+    <link rel="stylesheet" href="<?= e(url('assets/css/app.css?v=3')) ?>">
     <script defer src="<?= e(url('assets/vendor/leaflet/leaflet.js')) ?>"></script>
-    <script defer src="<?= e(url('assets/js/app.js?v=2')) ?>"></script>
+    <script defer src="<?= e(url('assets/js/app.js?v=3')) ?>"></script>
 </head>
 <body class="owner">
 <a class="skip-link" href="#main">Skip to content</a>

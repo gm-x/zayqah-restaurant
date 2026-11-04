@@ -98,7 +98,12 @@ CREATE TABLE IF NOT EXISTS orders (
   request_key CHAR(64) NOT NULL UNIQUE,                   -- makes a double-submitted checkout create one order
   customer_id INT NOT NULL,
   fulfillment VARCHAR(20) NOT NULL,                       -- pickup | delivery
-  status VARCHAR(20) NOT NULL DEFAULT 'placed',           -- placed | confirmed | preparing | ready | completed | cancelled
+  status VARCHAR(20) NOT NULL DEFAULT 'placed',           -- awaiting_payment | placed | confirmed | preparing | ready | completed | cancelled
+  payment_method VARCHAR(20) NOT NULL DEFAULT 'on_delivery', -- online (Stripe: Apple Pay, Google Pay, card) | on_delivery
+  payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid',   -- unpaid | pending | paid | refunded | failed
+  payment_intent_id VARCHAR(64) NULL UNIQUE,
+  paid_at DATETIME NULL,
+  refunded_at DATETIME NULL,
   subtotal_minor INT NOT NULL,
   delivery_fee_minor INT NOT NULL DEFAULT 0,
   total_minor INT NOT NULL,

@@ -24,6 +24,9 @@ $address = old('delivery_address', $u['delivery_address']);
 $lat = old('latitude', $u['latitude']);
 $lng = old('longitude', $u['longitude']);
 $note = old('note');
+$payOnline = pay_online_available();
+$payLater = pay_later_available();
+$payment = old('payment', $payOnline ? 'online' : 'on_delivery');
 
 if (post()) {
     $token = val('checkout_token');
@@ -40,6 +43,7 @@ if (post()) {
     if (!text_valid($name, 2, 120)) $errors[] = 'Enter the name for this order.';
     if (!phone_valid($phone)) $errors[] = 'Enter a valid phone number so we can reach you.';
     if (!text_valid($note, 0, 1000)) $errors[] = 'Keep your note under 1000 characters.';
+    if (!($payment === 'online' && $payOnline) && !($payment === 'on_delivery' && $payLater)) $errors[] = 'Choose how you would like to pay.';
     $point = null;
     if ($method === 'delivery') {
         if (!text_valid($address, 10, 1000)) $errors[] = 'Enter your full delivery address.';
@@ -52,10 +56,12 @@ if (post()) {
         db()->beginTransaction();
         $deliveryFee = $method === 'delivery' ? $fee : 0;
         $reference = 'OR-' . strtoupper(bin2hex(random_bytes(4)));
-        q('INSERT INTO orders (reference, request_key, customer_id, fulfillment, status, subtotal_minor, delivery_fee_minor, total_minor,
+        // Online orders stay out of the kitchen's queue until Stripe confirms the payment.
+        $status = $payment === 'online' ? 'awaiting_payment' : 'placed';
+        q('INSERT INTO orders (reference, request_key, customer_id, fulfillment, status, payment_method, subtotal_minor, delivery_fee_minor, total_minor,
               customer_name, customer_phone, delivery_address, latitude, longitude, note, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            $reference, $requestKey, $u['id'], $method, 'placed', $cart['subtotal'], $deliveryFee, $cart['subtotal'] + $deliveryFee,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            $reference, $requestKey, $u['id'], $method, $status, $payment, $cart['subtotal'], $deliveryFee, $cart['subtotal'] + $deliveryFee,
             $name, $phone, $method === 'delivery' ? $address : null, $point[0] ?? null, $point[1] ?? null, $note ?: null, now(), now(),
         ]);
         $orderId = (int)db()->lastInsertId();
@@ -65,17 +71,15 @@ if (post()) {
         }
         if ($method === 'delivery') q('UPDATE users SET delivery_address = ?, latitude = ?, longitude = ? WHERE id = ?', [$address, $point[0], $point[1], $u['id']]);
         $order = one('SELECT * FROM orders WHERE id = ?', [$orderId]);
-        record_order_event($order, 'placed');
-        $lines = implode("\n", array_map(fn($i) => $i['quantity'] . ' × ' . $i['name'] . '  ' . money((int)$i['line_total']), $cart['items']));
-        queue_mail($u['email'], 'Order received · ' . $reference . ' · ' . setting('name'),
-            "Hello {$u['full_name']},\n\nThank you for your order. We'll confirm it shortly.\n\n$lines\nTotal: " . money((int)$order['total_minor'])
-            . "\n\n" . ($method === 'delivery' ? "Delivery to: $address" : 'Collect from: ' . setting('address'))
-            . "\n\nTrack your order: " . url('order.php?id=' . $orderId) . "\n\n" . setting('name'));
+        if ($status === 'placed') {
+            record_order_event($order, 'placed');
+            order_received_mail($order);
+        }
         db()->commit();
         mail_after_commit();
         $_SESSION['cart'] = [];
         unset($_SESSION['checkout_token']);
-        go('order.php?id=' . $orderId . '&placed=1');
+        go($status === 'placed' ? 'order.php?id=' . $orderId . '&placed=1' : 'pay.php?id=' . $orderId);
     }
 }
 
@@ -123,6 +127,24 @@ require ROOT . '/app/views/header.php';
                         </div>
                         <?php area('note', 'Notes for the kitchen (optional)', $note, 'rows="2" maxlength="1000" placeholder="Allergies, spice level, door code…"'); ?>
                     </section>
+
+                    <section class="card">
+                        <h2><span class="step-num">3</span> Payment</h2>
+                        <div class="choice-grid">
+                            <?php if ($payOnline): ?>
+                                <label class="choice">
+                                    <input type="radio" name="payment" value="online" <?= $payment === 'online' ? 'checked' : '' ?>>
+                                    <span><span class="wallet-marks" aria-hidden="true"><span class="wallet-mark">Apple Pay</span><span class="wallet-mark">G Pay</span></span><strong>Pay now</strong><small>Apple Pay, Google Pay or card</small></span>
+                                </label>
+                            <?php endif ?>
+                            <?php if ($payLater): ?>
+                                <label class="choice">
+                                    <input type="radio" name="payment" value="on_delivery" <?= $payment === 'on_delivery' || !$payOnline ? 'checked' : '' ?>>
+                                    <span><?= icon('receipt', 22) ?><strong>Pay when you get it</strong><small>Cash or card on <span data-show-for="pickup">collection</span><span data-show-for="delivery">delivery</span></small></span>
+                                </label>
+                            <?php endif ?>
+                        </div>
+                    </section>
                 </div>
                 <aside class="checkout-aside">
                     <div class="card sticky">
@@ -135,8 +157,9 @@ require ROOT . '/app/views/header.php';
                             <div class="summary-line muted"><span>Delivery</span><span data-fee-label><?= $deliveryFee ? money($deliveryFee) : 'Free' ?></span></div>
                             <div class="summary-line total"><span>Total</span><span data-total><?= money($cart['subtotal'] + $deliveryFee) ?></span></div>
                         </div>
-                        <p class="hint"><?= icon('check', 15) ?> Pay by cash or card when you receive your order.</p>
-                        <button class="btn btn-primary btn-block btn-lg" type="submit" <?= ordering_open() ? '' : 'disabled' ?>>Place order</button>
+                        <p class="hint" data-pay-hint="online"><?= icon('check', 15) ?> Secure payment by Stripe. We start cooking once it's paid.</p>
+                        <p class="hint" data-pay-hint="on_delivery"><?= icon('check', 15) ?> Pay by cash or card when you receive your order.</p>
+                        <button class="btn btn-primary btn-block btn-lg" type="submit" data-submit-label <?= ordering_open() ? '' : 'disabled' ?>><?= $payment === 'online' ? 'Continue to payment' : 'Place order' ?></button>
                         <a class="btn btn-ghost btn-block btn-sm" href="<?= e(url('cart.php')) ?>">Edit order</a>
                     </div>
                 </aside>

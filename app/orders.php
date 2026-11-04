@@ -2,6 +2,8 @@
 // Order lifecycle, notifications and tracking views.
 
 const ORDER_TRANSITIONS = [
+    // An online order waits here until Stripe confirms payment (apply_payment_intent moves it to placed).
+    'awaiting_payment' => ['cancelled'],
     'placed'    => ['confirmed', 'cancelled'],
     'confirmed' => ['preparing', 'cancelled'],
     'preparing' => ['ready', 'cancelled'],
@@ -17,6 +19,7 @@ function status_label(array $order, ?string $status = null): string
     $status ??= $order['status'];
     $pickup = $order['fulfillment'] === 'pickup';
     return match ($status) {
+        'awaiting_payment' => 'Awaiting payment',
         'placed'    => 'Order placed',
         'confirmed' => 'Confirmed',
         'preparing' => 'Being prepared',
@@ -83,6 +86,11 @@ function change_order_status(array $order, string $next): ?string
     if (in_array($next, ['completed', 'cancelled'], true)) q('DELETE FROM delivery_links WHERE order_id = ?', [$order['id']]);
     record_order_event($order, $next);
     db()->commit();
+    if ($next === 'cancelled') {
+        cancel_payment_intent($order);
+        $refundError = refund_order($order);
+        if ($refundError) return $refundError;
+    }
     $customer = one('SELECT email, full_name FROM users WHERE id = ?', [$order['customer_id']]);
     if ($customer && in_array($next, ['confirmed', 'ready', 'cancelled'], true)) {
         queue_mail($customer['email'], setting('name') . ' · ' . status_label($order, $next) . ' · ' . $order['reference'],
@@ -90,6 +98,19 @@ function change_order_status(array $order, string $next): ?string
         mail_after_commit();
     }
     return null;
+}
+
+/** The "we've got your order" email, sent when an order reaches the kitchen. */
+function order_received_mail(array $order): void
+{
+    $customer = one('SELECT email, full_name FROM users WHERE id = ?', [$order['customer_id']]);
+    if (!$customer) return;
+    $lines = implode("\n", array_map(fn($i) => $i['quantity'] . ' × ' . $i['name'] . '  ' . money((int)$i['total_minor']), order_items((int)$order['id'])));
+    $payment = $order['payment_status'] === 'paid' ? 'Paid online' : 'Pay on ' . ($order['fulfillment'] === 'delivery' ? 'delivery' : 'collection');
+    queue_mail($customer['email'], 'Order received · ' . $order['reference'] . ' · ' . setting('name'),
+        "Hello {$customer['full_name']},\n\nThank you for your order. We'll confirm it shortly.\n\n$lines\nTotal: " . money((int)$order['total_minor']) . " ($payment)"
+        . "\n\n" . ($order['fulfillment'] === 'delivery' ? 'Delivery to: ' . $order['delivery_address'] : 'Collect from: ' . setting('address'))
+        . "\n\nTrack your order: " . url('order.php?id=' . $order['id']) . "\n\n" . setting('name'));
 }
 
 function tracking_html(array $order): string
@@ -107,8 +128,11 @@ function tracking_html(array $order): string
             </div>
             <?= status_badge($order) ?>
         </div>
-        <?php if ($order['status'] === 'cancelled'): ?>
-            <p class="tracker-note">This order was cancelled. Call us on <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', setting('phone'))) ?>"><?= e(setting('phone')) ?></a> if you have any questions.</p>
+        <?php if ($order['status'] === 'awaiting_payment'): ?>
+            <p class="tracker-note">We'll start preparing your order as soon as your payment goes through.</p>
+            <a class="btn btn-primary" href="<?= e(url('pay.php?id=' . $order['id'])) ?>">Complete payment</a>
+        <?php elseif ($order['status'] === 'cancelled'): ?>
+            <p class="tracker-note">This order was cancelled<?= $order['payment_status'] === 'refunded' ? ' and your payment has been refunded' : '' ?>. Call us on <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', setting('phone'))) ?>"><?= e(setting('phone')) ?></a> if you have any questions.</p>
         <?php else: ?>
             <ol class="steps">
                 <?php foreach ($steps as $i => $step):
@@ -153,7 +177,12 @@ function order_summary(array $order, array $items): void
         <div class="summary-line muted"><span>Subtotal</span><span><?= money((int)$order['subtotal_minor']) ?></span></div>
         <div class="summary-line muted"><span><?= $order['fulfillment'] === 'delivery' ? 'Delivery' : 'Collection' ?></span><span><?= $order['delivery_fee_minor'] ? money((int)$order['delivery_fee_minor']) : 'Free' ?></span></div>
         <div class="summary-line total"><span>Total</span><span><?= money((int)$order['total_minor']) ?></span></div>
-        <p class="hint">Pay on <?= $order['fulfillment'] === 'delivery' ? 'delivery' : 'collection' ?> by cash or card.</p>
+        <p class="hint">
+            <?php if ($order['payment_status'] === 'paid'): ?><?= icon('check', 15) ?> Paid online <?= e(local_time($order['paid_at'], 'j M, g:i a')) ?>
+            <?php elseif ($order['payment_status'] === 'refunded'): ?>Refunded <?= e(local_time($order['refunded_at'], 'j M, g:i a')) ?>
+            <?php elseif ($order['payment_method'] === 'online'): ?>Online payment not completed yet
+            <?php else: ?>Pay on <?= $order['fulfillment'] === 'delivery' ? 'delivery' : 'collection' ?> by cash or card.<?php endif ?>
+        </p>
     </div>
     <?php
 }

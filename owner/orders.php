@@ -41,7 +41,7 @@ require ROOT . '/app/views/owner-start.php';
     <?php else: ?>
         <div class="table-wrap">
             <table class="table">
-                <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Type</th><th>Total</th><th>Status</th><th>Placed</th></tr></thead>
+                <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Type</th><th>Total</th><th>Payment</th><th>Status</th><th>Placed</th></tr></thead>
                 <tbody>
                 <?php foreach ($orders as $o): ?>
                     <tr class="row-link" data-href="<?= e(url('owner/order.php?id=' . $o['id'])) ?>">
@@ -50,6 +50,7 @@ require ROOT . '/app/views/owner-start.php';
                         <td><?= (int)$o['item_count'] ?></td>
                         <td><?= $o['fulfillment'] === 'delivery' ? 'Delivery' : 'Collection' ?></td>
                         <td><?= money((int)$o['total_minor']) ?></td>
+                        <td><?= payment_badge($o) ?></td>
                         <td><?= status_badge($o) ?></td>
                         <td><?= e(local_time($o['created_at'], 'j M, g:i a')) ?></td>
                     </tr>

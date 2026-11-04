@@ -59,6 +59,20 @@ if (post()) {
             flash('Ordering settings saved.');
             go('owner/settings.php#ordering');
         }
+    } elseif ($action === 'payments') {
+        $values = [
+            'pay_online'    => val('pay_online') === '1' ? '1' : '0',
+            'pay_later'     => val('pay_later') === '1' ? '1' : '0',
+            'currency_code' => strtolower(val('currency_code')),
+        ];
+        if ($values['pay_online'] === '0' && $values['pay_later'] === '0') $errors[] = 'Keep at least one way to pay switched on.';
+        if ($values['pay_online'] === '1' && !stripe_ready()) $errors[] = 'Add your Stripe keys to the server before switching on online payments.';
+        if (!preg_match('/^[a-z]{3}$/', $values['currency_code'])) $errors[] = 'Enter a three-letter currency code such as GBP.';
+        if (!$errors) {
+            save_settings($values);
+            flash('Payment settings saved.');
+            go('owner/settings.php#payments');
+        }
     } elseif ($action === 'hours') {
         $hours = [];
         foreach (WEEKDAYS as $d => $dayName) {
@@ -91,6 +105,7 @@ require ROOT . '/app/views/owner-start.php';
     <nav class="settings-nav" aria-label="Settings sections">
         <a href="#profile"><?= icon('store', 16) ?> Profile</a>
         <a href="#ordering"><?= icon('bag', 16) ?> Ordering &amp; delivery</a>
+        <a href="#payments"><?= icon('receipt', 16) ?> Payments</a>
         <a href="#hours"><?= icon('clock', 16) ?> Opening hours</a>
     </nav>
     <div class="settings-body">
@@ -139,6 +154,31 @@ require ROOT . '/app/views/owner-start.php';
                     </select>
                 </div>
                 <button class="btn btn-primary" type="submit">Save ordering settings</button>
+            </form>
+        </section>
+
+        <section class="card" id="payments">
+            <h2>Payments</h2>
+            <div class="stripe-status <?= stripe_ready() ? 'is-ready' : '' ?>">
+                <?php if (stripe_ready()): ?>
+                    <strong><?= icon('check', 16) ?> Stripe connected<?= stripe_test_mode() ? ' — test mode' : ' — live' ?></strong>
+                    <span>Apple Pay, Google Pay and cards are available at checkout. Paid orders cancelled here are refunded automatically.</span>
+                    <?php if (cfg('stripe_webhook_secret') === ''): ?>
+                        <span class="text-danger">Webhook secret missing: add STRIPE_WEBHOOK_SECRET so payments are confirmed even if a customer closes their browser.</span>
+                    <?php endif ?>
+                <?php else: ?>
+                    <strong>Stripe not connected</strong>
+                    <span>Add STRIPE_PUBLISHABLE_KEY and STRIPE_SECRET_KEY to the server's .env file, then restart the site. Until then customers pay on collection or delivery.</span>
+                <?php endif ?>
+            </div>
+            <form method="post">
+                <?= csrf() ?><input type="hidden" name="action" value="payments">
+                <?php $pchk = fn(string $key) => ($action === 'payments' ? val($key) === '1' : $s[$key] === '1') ? 'checked' : ''; ?>
+                <label class="check"><input type="checkbox" name="pay_online" value="1" <?= $pchk('pay_online') ?> <?= stripe_ready() ? '' : 'disabled' ?>> Pay now online — Apple Pay, Google Pay and cards</label>
+                <label class="check"><input type="checkbox" name="pay_later" value="1" <?= $pchk('pay_later') ?>> Pay on collection or delivery — cash or card</label>
+                <?php field('currency_code', 'Currency code charged by Stripe', 'text', 'required minlength="3" maxlength="3" style="text-transform:uppercase;max-width:120px"', strtoupper($v('currency_code', 'payments')), 'Three letters, e.g. GBP. Must match the currency symbol above.'); ?>
+                <p class="hint">Webhook URL for the Stripe dashboard: <code><?= e(url('stripe-webhook.php')) ?></code> — events: payment_intent.succeeded, payment_intent.payment_failed, charge.refunded.</p>
+                <button class="btn btn-primary" type="submit">Save payment settings</button>
             </form>
         </section>
 

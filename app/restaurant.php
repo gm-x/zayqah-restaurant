@@ -15,8 +15,11 @@ function setting_defaults(): array
         'phone'            => '+44 20 0000 0000',
         'email'            => 'hello@example.com',
         'currency'         => '£',
+        'currency_code'    => 'gbp', // ISO code Stripe charges in
         'timezone'         => 'Europe/London',
         'accepting_orders' => '1',
+        'pay_online'       => '1',   // Apple Pay, Google Pay and cards via Stripe (needs Stripe keys)
+        'pay_later'        => '1',   // cash or card on collection/delivery
         'pickup_enabled'   => '1',
         'delivery_enabled' => '1',
         'delivery_fee'     => '250',

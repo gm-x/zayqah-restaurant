@@ -13,8 +13,11 @@ if (post() && val('action') === 'toggle-ordering') {
 // "Today" is the restaurant's local day, converted to UTC for the query.
 $dayStart = local_now()->setTime(0, 0)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
 $weekStart = local_now()->setTime(0, 0)->modify('-6 days')->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-$today = one("SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total_minor END), 0) AS revenue FROM orders WHERE created_at >= ?", [$dayStart]);
-$week = one("SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total_minor END), 0) AS revenue FROM orders WHERE created_at >= ?", [$weekStart]);
+// Unpaid online orders never reached the kitchen, so they are left out of the figures.
+$sales = "SELECT COUNT(*) AS orders, COALESCE(SUM(CASE WHEN status <> 'cancelled' THEN total_minor END), 0) AS revenue,
+    COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN total_minor END), 0) AS paid_online FROM orders WHERE created_at >= ? AND status <> 'awaiting_payment'";
+$today = one($sales, [$dayStart]);
+$week = one($sales, [$weekStart]);
 $active = all("SELECT * FROM orders WHERE status IN ('placed', 'confirmed', 'preparing', 'ready') ORDER BY FIELD(status, 'placed', 'confirmed', 'preparing', 'ready'), created_at");
 $topDishes = all("SELECT i.name, SUM(i.quantity) AS qty, SUM(i.total_minor) AS revenue FROM order_items i JOIN orders o ON o.id = i.order_id
     WHERE o.created_at >= ? AND o.status <> 'cancelled' GROUP BY i.name ORDER BY qty DESC LIMIT 5", [$weekStart]);
@@ -33,7 +36,7 @@ require ROOT . '/app/views/owner-start.php';
 
 <div class="stat-grid" data-autorefresh="30">
     <div class="stat-card"><span>Orders today</span><strong><?= (int)$today['orders'] ?></strong></div>
-    <div class="stat-card"><span>Sales today</span><strong><?= money((int)$today['revenue']) ?></strong></div>
+    <div class="stat-card"><span>Sales today</span><strong><?= money((int)$today['revenue']) ?></strong><?php if ((int)$today['paid_online']): ?><small><?= money((int)$today['paid_online']) ?> paid online</small><?php endif ?></div>
     <div class="stat-card"><span>Last 7 days</span><strong><?= money((int)$week['revenue']) ?></strong><small><?= (int)$week['orders'] ?> order<?= (int)$week['orders'] === 1 ? '' : 's' ?></small></div>
     <div class="stat-card <?= $active ? 'is-hot' : '' ?>"><span>Open orders</span><strong><?= count($active) ?></strong></div>
 </div>
@@ -53,7 +56,7 @@ require ROOT . '/app/views/owner-start.php';
                             <td><a href="<?= e(url('owner/order.php?id=' . $o['id'])) ?>"><strong><?= e($o['reference']) ?></strong></a></td>
                             <td><?= e($o['customer_name']) ?></td>
                             <td><?= $o['fulfillment'] === 'delivery' ? icon('truck', 16) . ' Delivery' : icon('bag', 16) . ' Collection' ?></td>
-                            <td><?= money((int)$o['total_minor']) ?></td>
+                            <td><?= money((int)$o['total_minor']) ?> <?= $o['payment_status'] === 'paid' ? '<span class="badge badge-completed">Paid</span>' : '' ?></td>
                             <td><?= status_badge($o) ?></td>
                             <td><?= e(local_time($o['created_at'], 'g:i a')) ?></td>
                         </tr>

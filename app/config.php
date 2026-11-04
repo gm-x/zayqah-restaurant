@@ -9,4 +9,8 @@ return [
     'db_password'    => getenv('DB_PASSWORD') ?: (getenv('MYSQL_PASSWORD') ?: ''),
     'mail_transport' => getenv('MAIL_TRANSPORT') ?: 'log', // log: writes storage/mail.log; mail: server MTA
     'mail_from'      => getenv('MAIL_FROM') ?: 'no-reply@example.com',
+    // Stripe powers Apple Pay, Google Pay and card payments. Keep keys in the environment, never in the database.
+    'stripe_publishable_key' => getenv('STRIPE_PUBLISHABLE_KEY') ?: '',
+    'stripe_secret_key'      => getenv('STRIPE_SECRET_KEY') ?: '',
+    'stripe_webhook_secret'  => getenv('STRIPE_WEBHOOK_SECRET') ?: '',
 ];

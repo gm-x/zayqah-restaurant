@@ -29,7 +29,8 @@ if (PHP_SAPI !== 'cli') {
     session_start();
     header('X-Content-Type-Options: nosniff');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' https://images.unsplash.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+    // Stripe (js.stripe.com) hosts the Apple Pay / Google Pay / card fields in its own frames.
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' https://images.unsplash.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.stripe.com data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://js.stripe.com https://*.js.stripe.com; frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com; connect-src 'self' https://api.stripe.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
     header('Cache-Control: no-store');
 }
 
@@ -390,4 +391,5 @@ set_exception_handler(function (Throwable $ex): void {
 
 require_once ROOT . '/app/restaurant.php';
 require_once ROOT . '/app/orders.php';
+require_once ROOT . '/app/payments.php';
 require_once ROOT . '/app/icons.php';

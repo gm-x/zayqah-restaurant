@@ -178,8 +178,16 @@
             $('[data-total]', checkout).textContent = money(subtotal + deliveryFee);
             if (method === 'delivery') window.dispatchEvent(new Event('resize')); // let a newly shown map size itself
         };
+        const syncPayment = () => {
+            const pay = $('input[name="payment"]:checked', checkout)?.value || 'on_delivery';
+            $$('[data-pay-hint]', checkout).forEach((el) => { el.hidden = el.dataset.payHint !== pay; });
+            const button = $('[data-submit-label]', checkout);
+            if (button) button.textContent = pay === 'online' ? 'Continue to payment' : 'Place order';
+        };
         $$('input[name="fulfillment"]', checkout).forEach((r) => r.addEventListener('change', sync));
+        $$('input[name="payment"]', checkout).forEach((r) => r.addEventListener('change', syncPayment));
         sync();
+        syncPayment();
     }
 
     /* ---------- Maps (Leaflet + OpenStreetMap) ---------- */

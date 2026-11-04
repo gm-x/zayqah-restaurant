@@ -20,7 +20,7 @@ require ROOT . '/app/views/header.php';
                         <strong><?= e($o['reference']) ?></strong>
                         <small><?= e(local_time($o['created_at'])) ?> · <?= (int)$o['item_count'] ?> item<?= (int)$o['item_count'] === 1 ? '' : 's' ?> · <?= $o['fulfillment'] === 'delivery' ? 'Delivery' : 'Collection' ?></small>
                     </div>
-                    <div class="list-row-end"><?= status_badge($o) ?><strong><?= money((int)$o['total_minor']) ?></strong></div>
+                    <div class="list-row-end"><?= $o['payment_status'] === 'paid' || $o['payment_status'] === 'refunded' ? payment_badge($o) : '' ?><?= status_badge($o) ?><strong><?= money((int)$o['total_minor']) ?></strong></div>
                 </a>
             <?php endforeach ?>
         </div>

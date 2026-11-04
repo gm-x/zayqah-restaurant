@@ -36,10 +36,10 @@ require ROOT . '/app/views/owner-start.php';
 ?>
 <a class="link-back" href="<?= e(url('owner/orders.php')) ?>"><?= icon('back', 16) ?> Orders</a>
 <div class="owner-head">
-    <div><h1><?= e($order['reference']) ?> <?= status_badge($order) ?></h1><p class="muted">Placed <?= e(local_time($order['created_at'])) ?> · <?= $order['fulfillment'] === 'delivery' ? 'Delivery' : 'Collection' ?></p></div>
+    <div><h1><?= e($order['reference']) ?> <?= status_badge($order) ?> <?= payment_badge($order) ?></h1><p class="muted">Placed <?= e(local_time($order['created_at'])) ?> · <?= $order['fulfillment'] === 'delivery' ? 'Delivery' : 'Collection' ?></p></div>
     <div class="row-gap">
         <?php foreach ($next as $status): ?>
-            <form method="post" <?= $status === 'cancelled' ? 'data-confirm="Cancel this order? The customer will be notified."' : '' ?>>
+            <form method="post" <?= $status === 'cancelled' ? 'data-confirm="Cancel this order? The customer will be notified' . ($order['payment_status'] === 'paid' ? ' and refunded ' . e(money((int)$order['total_minor'])) : '') . '."' : '' ?>>
                 <?= csrf() ?><input type="hidden" name="action" value="status"><input type="hidden" name="status" value="<?= e($status) ?>">
                 <button class="btn <?= $status === 'cancelled' ? 'btn-ghost btn-danger-text' : 'btn-primary' ?>" type="submit">
                     <?= e(match ($status) { 'confirmed' => 'Accept order', 'preparing' => 'Start preparing', 'ready' => $order['fulfillment'] === 'pickup' ? 'Ready for collection' : 'Send out for delivery', 'completed' => $order['fulfillment'] === 'pickup' ? 'Mark collected' : 'Mark delivered', 'cancelled' => 'Cancel order', default => ucfirst($status) }) ?>

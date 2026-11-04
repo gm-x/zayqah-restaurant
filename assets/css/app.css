@@ -576,3 +576,20 @@ body.owner { background: #f6f3ee; }
 @media (max-width: 600px) {
     .owner-topbar .open-pill { font-size: .78rem; padding: 5px 10px; }
 }
+
+/* ---------- Payments ---------- */
+.badge-awaiting_payment { background: #fff4d6; color: #8a5a00; }
+.wallet-marks { display: flex; gap: 6px; margin-bottom: 4px; }
+.wallet-mark { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: #000; color: #fff; font-size: .72rem; font-weight: 600; letter-spacing: -.01em; }
+.wallet-mark + .wallet-mark { background: #fff; color: #3c4043; border: 1px solid #dadce0; }
+.pay-card h2 { font-size: 1.15rem; }
+.wallets { margin-bottom: 8px; }
+#express-checkout { min-height: 50px; }
+.divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--muted); font-size: .85rem; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+#payment-element { margin-bottom: 18px; min-height: 120px; }
+.stripe-status { display: grid; gap: 4px; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--surface-2); margin-bottom: 18px; font-size: .92rem; }
+.stripe-status.is-ready { background: var(--green-soft); }
+.stripe-status.is-ready strong { color: var(--green); }
+.stripe-status strong .icon { vertical-align: -3px; }
+code { font-size: .85em; background: var(--surface-2); padding: 2px 6px; border-radius: 5px; word-break: break-all; }

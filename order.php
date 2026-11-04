@@ -7,11 +7,16 @@ if (is_owner($u) && (int)$order['customer_id'] !== (int)$u['id']) go('owner/orde
 
 if (post() && val('action') === 'cancel') {
     // Customers may cancel only before the kitchen confirms the order.
-    if ($order['status'] !== 'placed') {
+    if (!in_array($order['status'], ['placed', 'awaiting_payment'], true)) {
         flash('This order has already been confirmed. Please call us to make changes.', 'error');
-    } elseif (!change_order_status($order, 'cancelled')) {
-        notify_owners('Order cancelled by customer', $order['reference'] . ' · ' . $order['customer_name'], 'owner/order.php?id=' . $order['id'], 'customer-cancel:' . $order['id']);
-        flash('Your order was cancelled.');
+    } elseif ($error = change_order_status($order, 'cancelled')) {
+        flash($error, 'error');
+    } else {
+        // Unpaid online orders never reached the kitchen, so only tell the owner about real orders.
+        if ($order['status'] === 'placed') {
+            notify_owners('Order cancelled by customer', $order['reference'] . ' · ' . $order['customer_name'], 'owner/order.php?id=' . $order['id'], 'customer-cancel:' . $order['id']);
+        }
+        flash($order['payment_status'] === 'paid' ? 'Your order was cancelled and your payment refunded.' : 'Your order was cancelled.');
     }
     go('order.php?id=' . $order['id']);
 }
@@ -50,7 +55,7 @@ require ROOT . '/app/views/header.php';
                     <p class="hint">Placed <?= e(local_time($order['created_at'])) ?></p>
                     <?php order_summary($order, $items); ?>
                     <?php if ($order['note']): ?><p><strong>Your note:</strong> <?= nl2br(e($order['note'])) ?></p><?php endif ?>
-                    <?php if ($order['status'] === 'placed'): ?>
+                    <?php if (in_array($order['status'], ['placed', 'awaiting_payment'], true)): ?>
                         <form method="post" data-confirm="Cancel this order?" data-cancel-order><?= csrf() ?><input type="hidden" name="action" value="cancel"><button class="btn btn-ghost btn-block btn-danger-text" type="submit">Cancel order</button></form>
                     <?php endif ?>
                 </div>
